@@ -11,8 +11,8 @@ import netifaces
 import telegram
 import requests
 import logging
-import config
 import nmap
+import json
 import os
 
 if os.geteuid() != 0:
@@ -49,7 +49,7 @@ def msg_scan(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=textline)
 
 def main():
-    updater = Updater(token=config.telegram_api)
+    updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
@@ -64,7 +64,29 @@ def main():
     updater.start_polling()
 
 if __name__ == '__main__':
-    interface = config.interface
+    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+
+    try:
+        with open(script_path + "config.cfg") as f:
+            config = f.read()
+            f.close()
+    except Exception:
+        print("[!] Config file not found... Please run the 'setup.py' script first.")
+        exit()
+
+    try:
+        config = json.loads(config)
+    except:
+        print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
+        exit()
+
+    interface = config.get("interface", False)
+    telegram_api = config.get("telegram_api", False)
+
+    if interface == False or telegram_api == False:
+        print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
+        exit()
+
     iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
     netmask = iface_info["netmask"]
     ip = iface_info["addr"]
