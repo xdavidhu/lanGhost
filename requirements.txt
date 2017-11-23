@@ -2,3 +2,4 @@ netaddr
 netifaces
 python-telegram-bot
 python-nmap
+requests
