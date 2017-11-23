@@ -9,6 +9,22 @@ import telegram
 import json
 import os
 
+BLUE = '\033[1m' + '\033[94m'
+WHITE = '\033[1m' + '\33[97m'
+END = '\033[0m'
+header = """
+
+                """ + BLUE + """ _            """ + WHITE + """  _____ _               _     .-.
+                """ + BLUE + """| |           """ + WHITE + """ / ____| |             | |   | OO|
+                """ + BLUE + """| | __ _ _ __ """ + WHITE + """| |  __| |__   ___  ___| |_  |   |
+                """ + BLUE + """| |/ _` | '_ \\""" + WHITE + """| | |_ | '_ \ / _ \/ __| __| '^^^'
+                """ + BLUE + """| | (_| | | | """ + WHITE + """| |__| | | | | (_) \__ | |_
+                """ + BLUE + """|_|\__,_|_| |_""" + WHITE + """|\_____|_| |_|\___/|___/\__|
+                """ + BLUE + """           v1.0 """ + WHITE + """by David Schütz (@xdavidhu)
+
+""" + END
+print(header)
+print("[+] Starting setup...")
 interface = input("[?] Please enter the name of the network interface " +\
                     "connected/will be connected to the target LAN: ")
 print("[+] Interface '" + interface + "' set.")
