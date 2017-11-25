@@ -3,14 +3,15 @@
 # lanGhost.py
 # author: xdavidhu
 
-from telegram.error import NetworkError, Unauthorized
 from telegram.ext import Updater, CommandHandler
 from netaddr import IPAddress
 from time import sleep
 import netifaces
+import threading
 import telegram
 import requests
 import logging
+import time
 import nmap
 import json
 import os
@@ -31,7 +32,35 @@ def scan():
 
 def resolveMac(mac):
     r = requests.get('https://api.macvendors.com/' + mac)
-    return r.text
+    return r.text[:15]
+
+def subscriptionHandler(bot):
+    global admin_chatid
+
+    hosts = False
+    while True:
+        print("[+] Scanning for new hosts...")
+        new_hosts = scan()
+        connected_hosts = []
+        disconnected_hosts = []
+        if not hosts == False:
+            for new_host in new_hosts:
+                if not new_host in hosts:
+                    connected_hosts.append(new_host)
+            for host in hosts:
+                if not host in new_hosts:
+                    disconnected_hosts.append(host)
+
+        hosts = new_hosts
+
+        for host in connected_hosts:
+            print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
+            bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
+        for host in disconnected_hosts:
+            print("[+] Device disconnected: " + resolveMac(host[1]) + " - " + host[0])
+            bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[1]) + " ➖ " + host[0])
+
+        time.sleep(5)
 
 def msg_start(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
@@ -44,14 +73,18 @@ def msg_scan(bot, update):
     hosts = scan()
     textline = "📱 Devices online:\n\n"
     for host in hosts:
-        textline += host[0] + " ➖ " + resolveMac(host[1])[:15] + "\n"
+        textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
     textline = textline[:-2]
     bot.send_message(chat_id=update.message.chat_id, text=textline)
 
 def main():
     updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+    bot = updater.bot
+
+    t = threading.Thread(target=subscriptionHandler, args=[bot])
+    t.daemon = True
+    t.start()
 
     start_handler = CommandHandler('start', msg_start)
     dispatcher.add_handler(start_handler)
@@ -82,8 +115,9 @@ if __name__ == '__main__':
 
     interface = config.get("interface", False)
     telegram_api = config.get("telegram_api", False)
+    admin_chatid = config.get("admin_chatid", False)
 
-    if interface == False or telegram_api == False:
+    if interface == False or telegram_api == False or admin_chatid == False:
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
         exit()
 
