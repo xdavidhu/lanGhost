@@ -37,18 +37,33 @@ def subscriptionHandler(bot):
     global admin_chatid
 
     hosts = False
+    disconnected_hosts = []
     while True:
         print("[+] Scanning for new hosts...")
         new_hosts = scan()
         connected_hosts = []
-        disconnected_hosts = []
+        dontNotify = []
+
+        for host in new_hosts:
+            i = 0
+            for _ in disconnected_hosts:
+                backUp = False
+                if host == disconnected_hosts[i][0]:
+                    backUp = True
+                    dontNotify.append(host)
+                    disconnected_hosts.pop(i)
+
+                if not backUp:
+                    disconnected_hosts[i][1] += 1
+
         if not hosts == False:
             for new_host in new_hosts:
                 if not new_host in hosts:
-                    connected_hosts.append(new_host)
+                    if not new_host in dontNotify:
+                        connected_hosts.append(new_host)
             for host in hosts:
                 if not host in new_hosts:
-                    disconnected_hosts.append(host)
+                    disconnected_hosts.append([host, 1])
 
         hosts = new_hosts
 
@@ -56,8 +71,12 @@ def subscriptionHandler(bot):
             print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
             bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
         for host in disconnected_hosts:
-            print("[+] Device disconnected: " + resolveMac(host[1]) + " - " + host[0])
-            bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[1]) + " ➖ " + host[0])
+            if host[1] >= 5:
+                print("[+] Device disconnected: " + resolveMac(host[0][1]) + " - " + host[0][0])
+                bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[0][1]) + " ➖ " + host[0][0])
+                disconnected_hosts.remove(host)
+
+        print(disconnected_hosts)
 
         time.sleep(5)
 
