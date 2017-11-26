@@ -19,10 +19,6 @@ import nmap
 import json
 import os
 
-if os.geteuid() != 0:
-    print("[!] Please run lanGhost as root!")
-    exit()
-
 def scan():
     global ip_range
     nm = nmap.PortScanner()
@@ -217,6 +213,10 @@ def main():
     updater.start_polling()
 
 if __name__ == '__main__':
+    if os.geteuid() != 0:
+        print("[!] Please run lanGhost as root!")
+        exit()
+
     script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 
     try:
