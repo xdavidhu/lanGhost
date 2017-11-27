@@ -12,6 +12,7 @@ from scapy.all import send, ARP
 from time import sleep
 import netifaces
 import threading
+import traceback
 import telegram
 import requests
 import time
@@ -19,66 +20,117 @@ import nmap
 import json
 import os
 
+def refreshNetworkInfo():
+    global iface_mac
+    global ip_range
+    global gw_ip
+    global gw_mac
+    global ip
+
+    iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
+    iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
+    netmask = iface_info["netmask"]
+    ip = iface_info["addr"]
+    ip_range = ip + "/" + str(IPAddress(netmask).netmask_bits())
+    gw_ip = False
+    for i in netifaces.gateways()[2]:
+        if i[1] == interface:
+            gw_ip = i[0]
+    if not gw_ip:
+        print("[!] Cant get gateway IP...")
+    else:
+        nm = nmap.PortScanner()
+        scan = nm.scan(hosts=gw_ip, arguments='-sP')
+        hosts = []
+        if gw_ip in scan["scan"]:
+            if "mac" in scan["scan"][gw_ip]["addresses"]:
+                gw_mac = scan["scan"][gw_ip]["addresses"]["mac"]
+    if not gw_mac:
+        print("[!] Cant get gateway MAC...")
+
 def scan():
+    refreshNetworkInfo()
     global ip_range
     nm = nmap.PortScanner()
     scan = nm.scan(hosts=ip_range, arguments='-sP')
     hosts = []
     for host in scan["scan"]:
         if "mac" in scan["scan"][host]["addresses"]:
-            hosts.append([host, scan["scan"][host]["addresses"]["mac"]])
+            if "hostnames" in scan["scan"][host] and "name" in scan["scan"][host]["hostnames"][0] and not scan["scan"][host]["hostnames"][0]["name"] == "":
+                hosts.append([host, scan["scan"][host]["addresses"]["mac"], scan["scan"][host]["hostnames"][0]["name"]])
+            else:
+                hosts.append([host, scan["scan"][host]["addresses"]["mac"]])
     return hosts
 
 def resolveMac(mac):
     r = requests.get('https://api.macvendors.com/' + mac)
-    return r.text[:15]
+    return r.text[:15] + "..."
 
 def subscriptionHandler(bot):
     global admin_chatid
+    global latest_scan
 
-    hosts = False
-    disconnected_hosts = []
     while True:
-        print("[+] Scanning for new hosts...")
-        new_hosts = scan()
-        connected_hosts = []
-        dontNotify = []
+        try:
+            hosts = False
+            disconnected_hosts = []
+            while True:
+                print("[+] Scanning for new hosts...")
+                new_hosts = scan()
+                connected_hosts = []
+                dontNotify = []
+                justAdded = []
 
-        for host in new_hosts:
-            i = 0
-            for _ in disconnected_hosts:
-                backUp = False
-                if host == disconnected_hosts[i][0]:
-                    backUp = True
-                    dontNotify.append(host)
-                    disconnected_hosts.pop(i)
+                if not hosts == False:
+                    for new_host in new_hosts:
+                        if not new_host in hosts:
+                                connected_hosts.append(new_host)
+                    for host in hosts:
+                        if not host in new_hosts:
+                            disconnected_hosts.append([host, 1])
+                            justAdded.append(host)
 
-                if not backUp:
-                    disconnected_hosts[i][1] += 1
+                    latest_scan = new_hosts[:]
 
-        if not hosts == False:
-            for new_host in new_hosts:
-                if not new_host in hosts:
-                    if not new_host in dontNotify:
-                        connected_hosts.append(new_host)
-            for host in hosts:
-                if not host in new_hosts:
-                    disconnected_hosts.append([host, 1])
+                    for host in disconnected_hosts:
+                        latest_scan.append(host[0])
 
-        hosts = new_hosts
+                    latest_scan = sorted(latest_scan, key=lambda x: x[0])
 
-        for host in connected_hosts:
-            print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
-            bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
-        for host in disconnected_hosts:
-            if host[1] >= 5:
-                print("[+] Device disconnected: " + resolveMac(host[0][1]) + " - " + host[0][0])
-                bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[0][1]) + " ➖ " + host[0][0])
-                disconnected_hosts.remove(host)
 
-        print(disconnected_hosts)
+                for disconnected_host in disconnected_hosts:
+                    backUp = False
+                    for host in new_hosts:
+                        if host == disconnected_host[0]:
+                            backUp = True
+                            dontNotify.append(host)
+                            disconnected_hosts.remove(disconnected_host)
+                    if not backUp:
+                        if not disconnected_host[0] in justAdded:
+                            disconnected_host[1] += 1
 
-        time.sleep(5)
+                hosts = new_hosts
+
+                for host in connected_hosts:
+                    if not host in dontNotify:
+                        print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
+                        bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
+                for host in disconnected_hosts:
+                    if host[1] >= 10:
+                        print("[+] Device disconnected: " + resolveMac(host[0][1]) + " - " + host[0][0])
+                        bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[0][1]) + " ➖ " + host[0][0])
+                        disconnected_hosts.remove(host)
+
+                time.sleep(20)
+        except:
+            try:
+                print("[!] Woah, something went worng in the subscribtionHandler thread. Retrying...")
+                print("[DEBUG] " + str(traceback.format_exc()))
+                bot.send_message(chat_id=admin_chatid, text="😯 Woah, something went worng. Retrying...")
+                bot.send_message(chat_id=admin_chatid, text="🔧 Debug info: \n\n" + str(traceback.format_exc()[-2000:]))
+                bot.send_message(chat_id=admin_chatid, text="☝️ Could you please send this to @xdavidhu on Twitter? He will probably get triggered but after I'm sure he will try to fix it.")
+            except:
+                pass
 
 def arpSpoof(target, ID):
     global iface_mac
@@ -138,12 +190,15 @@ def msg_ping(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
 
 def msg_scan(bot, update, args):
+    global latest_scan
     bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
-    hosts = scan()
     textline = "📱 Devices online:\n\n"
-    for host in hosts:
-        textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
-    textline = textline[:-2]
+    for host in latest_scan:
+        if len(host) > 2:
+            textline += host[0] + " ➖ " + resolveMac(host[1]) + " ➖ " + host[2] + "\n"
+        else:
+            textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
+    textline = textline[:-1]
     bot.send_message(chat_id=update.message.chat_id, text=textline)
 
 def msg_kill(bot, update, args):
@@ -207,9 +262,13 @@ def msg_attacks(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
 
 def main():
+    global admin_chatid
+
     updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
     bot = updater.bot
+
+    bot.send_message(chat_id=admin_chatid, text="lanGhost started! 👻")
 
     t = threading.Thread(target=subscriptionHandler, args=[bot])
     t.daemon = True
@@ -260,30 +319,8 @@ if __name__ == '__main__':
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
         exit()
 
-    iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
-    iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
-    netmask = iface_info["netmask"]
-    ip = iface_info["addr"]
-    ip_range = ip + "/" + str(IPAddress(netmask).netmask_bits())
-    gw_ip = False
-    for i in netifaces.gateways()[2]:
-        if i[1] == interface:
-            gw_ip = i[0]
-    gw_mac = False
-    if not gw_ip:
-        print("[!] Cant get gateway IP...")
-    else:
-        hosts = scan()
-        for host in hosts:
-            if host[0] == gw_ip:
-                gw_mac = host[1]
-    if not gw_mac:
-        print("[!] Cant get gateway MAC...")
-    print("[+] IP address: " + ip)
-    print("[+] Interface MAC: " + iface_mac)
-    print("[+] Netmask: " + netmask)
-    print("[+] IP range: " + ip_range)
-    print("[+] Gateway IP: " + gw_ip)
-    print("[+] Gateway MAC: " + gw_mac)
+    refreshNetworkInfo()
+
     running_attacks = []
+    latest_scan = []
     main()
