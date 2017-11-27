@@ -90,13 +90,6 @@ def subscriptionHandler(bot):
                             disconnected_hosts.append([host, 1])
                             justAdded.append(host)
 
-                    latest_scan = new_hosts[:]
-
-                    for host in disconnected_hosts:
-                        latest_scan.append(host[0])
-
-                    latest_scan = sorted(latest_scan, key=lambda x: x[0])
-
 
                 for disconnected_host in disconnected_hosts:
                     backUp = False
@@ -110,6 +103,10 @@ def subscriptionHandler(bot):
                             disconnected_host[1] += 1
 
                 hosts = new_hosts
+                latest_scan = new_hosts[:]
+                for host in disconnected_hosts:
+                    latest_scan.append(host[0])
+                latest_scan = sorted(latest_scan, key=lambda x: x[0])
 
                 for host in connected_hosts:
                     if not host in dontNotify:
