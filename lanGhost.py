@@ -68,66 +68,75 @@ def resolveMac(mac):
 
 def subscriptionHandler(bot):
     global admin_chatid
-    global latest_scan
+    temp_disconnected = []
+    disconnected = []
+    reconnected = []
+    hosts = False
+
+    def handleDisconnect(host):
+        print("[D] Appending " + str([host, 1]) + " to temp_disconnected")
+        temp_disconnected.append([host, 1])
+
+    def handleScan(scan):
+        global latest_scan
+
+        for t_host in temp_disconnected:
+            if t_host[1] >= 5:
+                print("[D] Removed " + str(t_host) + " from temp_disconnected, its over 5")
+                disconnected.append(t_host[0])
+                temp_disconnected.remove(t_host)
+
+        for t_host in temp_disconnected:
+            if not t_host[0] in scan:
+                print("[D] Adding +1 to " + str(t_host))
+                t_host[1] += 1
+
+        latest_scan = scan[:]
+        for t_host in temp_disconnected:
+            latest_scan.append(t_host[0])
+
+    def handleConnect(host):
+        for t_host in temp_disconnected:
+            if t_host[0] == host:
+                print("[D] " + str(t_host) + " reconnected, removing from temp_disconnected")
+                reconnected.append(t_host[0])
+                temp_disconnected.remove(t_host)
+
+    def getConnected(hosts):
+        result = []
+        for host in hosts:
+            if host not in reconnected:
+                result.append(host)
+            else:
+                print("[D] Not printing " + str(host) + " because its just reconnected")
+        return result
 
     while True:
-        try:
-            hosts = False
-            disconnected_hosts = []
-            while True:
-                print("[+] Scanning for new hosts...")
-                new_hosts = scan()
-                connected_hosts = []
-                dontNotify = []
-                justAdded = []
+        print("[+] Scanning for new hosts...")
+        new_hosts = scan()
+        connected_hosts = []
+        disconnected_hosts = []
+        if not hosts == False:
+            for new_host in new_hosts:
+                if not new_host in hosts:
+                    handleConnect(new_host)
+                    connected_hosts.append(new_host)
+            handleScan(hosts)
+            for host in hosts:
+                if not host in new_hosts:
+                    handleDisconnect(host)
 
-                if not hosts == False:
-                    for new_host in new_hosts:
-                        if not new_host in hosts:
-                                connected_hosts.append(new_host)
-                    for host in hosts:
-                        if not host in new_hosts:
-                            disconnected_hosts.append([host, 1])
-                            justAdded.append(host)
+        hosts = new_hosts
 
+        for host in getConnected(connected_hosts):
+            print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
+            bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
+        for host in disconnected:
+            print("[+] Device disconnected: " + resolveMac(host[1]) + " - " + host[0])
+            bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[1]) + " ➖ " + host[0])
+            disconnected.remove(host)
 
-                for disconnected_host in disconnected_hosts:
-                    backUp = False
-                    for host in new_hosts:
-                        if host == disconnected_host[0]:
-                            backUp = True
-                            dontNotify.append(host)
-                            disconnected_hosts.remove(disconnected_host)
-                    if not backUp:
-                        if not disconnected_host[0] in justAdded:
-                            disconnected_host[1] += 1
-
-                hosts = new_hosts
-                latest_scan = new_hosts[:]
-                for host in disconnected_hosts:
-                    latest_scan.append(host[0])
-                latest_scan = sorted(latest_scan, key=lambda x: x[0])
-
-                for host in connected_hosts:
-                    if not host in dontNotify:
-                        print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
-                        bot.send_message(chat_id=admin_chatid, text="➕📱 New device connected: " + resolveMac(host[1]) + " ➖ " + host[0])
-                for host in disconnected_hosts:
-                    if host[1] >= 10:
-                        print("[+] Device disconnected: " + resolveMac(host[0][1]) + " - " + host[0][0])
-                        bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[0][1]) + " ➖ " + host[0][0])
-                        disconnected_hosts.remove(host)
-
-                time.sleep(20)
-        except:
-            try:
-                print("[!] Woah, something went worng in the subscribtionHandler thread. Retrying...")
-                print("[DEBUG] " + str(traceback.format_exc()))
-                bot.send_message(chat_id=admin_chatid, text="😯 Woah, something went worng. Retrying...")
-                bot.send_message(chat_id=admin_chatid, text="🔧 Debug info: \n\n" + str(traceback.format_exc()[-2000:]))
-                bot.send_message(chat_id=admin_chatid, text="☝️ Could you please send this to @xdavidhu on Twitter? He will probably get triggered but after I'm sure he will try to fix it.")
-            except:
-                pass
+        time.sleep(5)
 
 def arpSpoof(target, ID):
     global iface_mac
