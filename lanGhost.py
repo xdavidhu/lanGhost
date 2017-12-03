@@ -108,6 +108,7 @@ def subscriptionHandler(bot):
             if host not in reconnected:
                 result.append(host)
             else:
+                reconnected.remove(host)
                 print("[D] Not printing " + str(host) + " because its just reconnected")
         return result
 
