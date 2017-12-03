@@ -332,6 +332,22 @@ if __name__ == '__main__':
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
         exit()
 
+    GREEN = '\033[1m' + '\033[32m'
+    WHITE = '\033[1m' + '\33[97m'
+    END = '\033[0m'
+    header = """
+                    """ + GREEN + """ _            """ + WHITE + """  _____ _               _     .-.
+                    """ + GREEN + """| |           """ + WHITE + """ / ____| |             | |   | OO|
+                    """ + GREEN + """| | __ _ _ __ """ + WHITE + """| |  __| |__   ___  ___| |_  |   |
+                    """ + GREEN + """| |/ _` | '_ \\""" + WHITE + """| | |_ | '_ \ / _ \/ __| __| '^^^'
+                    """ + GREEN + """| | (_| | | | """ + WHITE + """| |__| | | | | (_) \__ | |_
+                    """ + GREEN + """|_|\__,_|_| |_""" + WHITE + """|\_____|_| |_|\___/|___/\__|
+                    """
+    try:
+        print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
+    except:
+        print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
+
     refreshNetworkInfo()
 
     running_attacks = []

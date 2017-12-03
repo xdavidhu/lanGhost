@@ -20,9 +20,12 @@ if __name__ == '__main__':
                     """ + GREEN + """| |/ _` | '_ \\""" + WHITE + """| | |_ | '_ \ / _ \/ __| __| '^^^'
                     """ + GREEN + """| | (_| | | | """ + WHITE + """| |__| | | | | (_) \__ | |_
                     """ + GREEN + """|_|\__,_|_| |_""" + WHITE + """|\_____|_| |_|\___/|___/\__|
-                    """ + GREEN + """           v1.0 """ + WHITE + """by David Schütz (@xdavidhu)
-    """ + END
-    print(header)
+                    """
+    try:
+        print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
+    except:
+        print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
+
     print("[+] Starting setup...")
     interface = input("[?] Please enter the name of the network interface " +\
                         "connected/will be connected to the target LAN: ")
