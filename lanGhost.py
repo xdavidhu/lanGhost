@@ -196,13 +196,24 @@ def attackManager(action, attack_type=False, target=False, ID=False):
     elif action == "list":
         return running_attacks
 
+
+# Command handlers:
+
 def msg_start(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
 
 def msg_ping(bot, update):
+    global admin_chatid
+    if not update.message.chat_id == admin_chatid:
+        return
+
     bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
 
 def msg_scan(bot, update, args):
+    global admin_chatid
+    if not update.message.chat_id == admin_chatid:
+        return
+
     global latest_scan
     bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
     textline = "📱 Devices online:\n\n"
@@ -215,6 +226,10 @@ def msg_scan(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text=textline)
 
 def msg_kill(bot, update, args):
+    global admin_chatid
+    if not update.message.chat_id == admin_chatid:
+        return
+
     if args == []:
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /kill [IP]")
         return
@@ -246,6 +261,10 @@ def msg_kill(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text="🔥 Killing internet for " + target_ip + "...")
 
 def msg_stop(bot, update, args):
+    global admin_chatid
+    if not update.message.chat_id == admin_chatid:
+        return
+
     if args == []:
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /stop [ATTACK ID]")
         return
@@ -263,6 +282,10 @@ def msg_stop(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
 
 def msg_attacks(bot, update, args):
+    global admin_chatid
+    if not update.message.chat_id == admin_chatid:
+        return
+    
     attacks = attackManager("list")
 
     if attacks == []:
