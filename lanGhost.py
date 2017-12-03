@@ -57,14 +57,20 @@ def scan():
     for host in scan["scan"]:
         if "mac" in scan["scan"][host]["addresses"]:
             if "hostnames" in scan["scan"][host] and "name" in scan["scan"][host]["hostnames"][0] and not scan["scan"][host]["hostnames"][0]["name"] == "":
-                hosts.append([host, scan["scan"][host]["addresses"]["mac"], scan["scan"][host]["hostnames"][0]["name"]])
+                name = scan["scan"][host]["hostnames"][0]["name"]
+                if len(name) > 15:
+                    name = name[:15] + "..."
+                hosts.append([host, scan["scan"][host]["addresses"]["mac"], name])
             else:
                 hosts.append([host, scan["scan"][host]["addresses"]["mac"]])
     return hosts
 
 def resolveMac(mac):
     r = requests.get('https://api.macvendors.com/' + mac)
-    return r.text[:15] + "..."
+    vendor = r.text
+    if len(vendor) > 15:
+        vendor = vendor[:15] + "..."
+    return vendor
 
 def subscriptionHandler(bot):
     global admin_chatid
