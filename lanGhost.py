@@ -98,8 +98,6 @@ def subscriptionHandler(bot):
                 t_host[1] += 1
 
         latest_scan = scan[:]
-        for t_host in temp_disconnected:
-            latest_scan.append(t_host[0])
 
     def handleConnect(host):
         for t_host in temp_disconnected:
@@ -132,6 +130,10 @@ def subscriptionHandler(bot):
             for host in hosts:
                 if not host in new_hosts:
                     handleDisconnect(host)
+
+        global latest_scan
+        for t_host in temp_disconnected:
+            latest_scan.append(t_host[0])
 
         hosts = new_hosts
 
