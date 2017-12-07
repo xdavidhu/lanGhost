@@ -128,11 +128,11 @@ def subscriptionHandler(bot):
                     handleDisconnect(host)
 
         global latest_scan
-        latest_scan = new_hosts
+        latest_scan = new_hosts[:]
         for t_host in temp_disconnected:
             latest_scan.append(t_host[0])
 
-        hosts = new_hosts
+        hosts = new_hosts[:]
 
         for host in getConnected(connected_hosts):
             print("[+] New device connected: " + resolveMac(host[1]) + " - " + host[0])
