@@ -221,7 +221,9 @@ def msg_scan(bot, update, args):
     global latest_scan
     bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
     textline = "📱 Devices online:\n\n"
-    for host in latest_scan:
+    temp_latest_scan = latest_scan[:]
+    temp_latest_scan = sorted(temp_latest_scan, key=lambda x: x[0])
+    for host in temp_latest_scan:
         if len(host) > 2:
             textline += host[0] + " ➖ " + resolveMac(host[1]) + " ➖ " + host[2] + "\n"
         else:
