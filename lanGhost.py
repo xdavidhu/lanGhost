@@ -84,8 +84,6 @@ def subscriptionHandler(bot):
         temp_disconnected.append([host, 1])
 
     def handleScan(scan):
-        global latest_scan
-
         for t_host in temp_disconnected:
             if t_host[1] >= 10:
                 print("[D] Removed " + str(t_host) + " from temp_disconnected, its over 5")
@@ -96,8 +94,6 @@ def subscriptionHandler(bot):
             if not t_host[0] in scan:
                 print("[D] Adding +1 to " + str(t_host))
                 t_host[1] += 1
-
-        latest_scan = scan[:]
 
     def handleConnect(host):
         for t_host in temp_disconnected:
@@ -132,6 +128,7 @@ def subscriptionHandler(bot):
                     handleDisconnect(host)
 
         global latest_scan
+        latest_scan = new_hosts
         for t_host in temp_disconnected:
             latest_scan.append(t_host[0])
 
