@@ -26,18 +26,29 @@ if __name__ == '__main__':
     except:
         print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
-    print("[+] Starting setup...")
+    print("[I] Step 1 / 3:\n")
     interface = input("[?] Please enter the name of the network interface " +\
                         "connected/will be connected to the target LAN: ")
     print("[+] Interface '" + interface + "' set.")
-    print("\n[+] Please create a Telegram API key by messaging @BotFather on " +\
-            "Telegram with the command '/newbot'. Follow the instructions and " +\
-            "make note of your bot's @username.")
+    os.system("clear")
+    print("\n\n[I] Step 2 / 3:\n")
+    print("[+] Please create a Telegram API key by messaging @BotFather on " +\
+            "Telegram with the command '/newbot'.\n\nAfter this, @BotFather "+\
+            "will ask you to choose a name for your bot. This can be "+\
+            "anything you want.\n\nLastly, @BotFather will ask you for a "+\
+            "username for your bot. You have to choose a unique username "+\
+            "here which ends with 'bot'. For example: xdavidbot. Make note "+\
+            "of this username, since later you will have to search for this "+\
+            "to find your bot, which lanGhost will be running on.\n\nAfter "+\
+            "you send you username of choise to @BotFather, you will "+\
+            "recieve your API key. Please enter it here:\n")
     telegram_api = input("[?] Telegram API key: ")
-    print("\n[+] For lanGhost to send you updates / info about new devices "+\
-            "on the target LAN, and to only allow access to you, please " +\
-            "send the number below to the bot you just created. Just search " +\
-            "for your bot's @username to find it.")
+    os.system("clear")
+    print("\n\n[I] Step 3 / 3:\n")
+    print("[+] Now for lanGhost to only allow access to you, you need to "+\
+            "verify yourself.\n\nSend the verification code below TO THE BOT"+\
+            " you just created. Just search for your bot's @username "+\
+            "(what you sent to @BotFather) to find it.")
     verification_code = ''.join(str(randint(0,9)) for _ in range(6))
     print("\n[+] Verification code to send: " + verification_code)
     admin_chatid = False
@@ -64,8 +75,8 @@ if __name__ == '__main__':
     while True:
         try:
             if not admin_chatid == False:
-                print("\n[+] Device linked successfully! Shutting down Telegram " +\
-                        "bot, please wait a second...")
+                print("\n[+] Device linked successfully! Shutting down the "+\
+                        "temporary Telegram bot, please wait a second...")
                 updater.stop()
                 break
         except:
