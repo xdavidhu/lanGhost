@@ -87,7 +87,7 @@ def subscriptionHandler(bot):
         global latest_scan
 
         for t_host in temp_disconnected:
-            if t_host[1] >= 5:
+            if t_host[1] >= 10:
                 print("[D] Removed " + str(t_host) + " from temp_disconnected, its over 5")
                 disconnected.append(t_host[0])
                 temp_disconnected.remove(t_host)
@@ -143,7 +143,7 @@ def subscriptionHandler(bot):
             bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[1]) + " ➖ " + host[0])
             disconnected.remove(host)
 
-        time.sleep(5)
+        time.sleep(20)
 
 def arpSpoof(target, ID):
     global iface_mac
@@ -200,18 +200,22 @@ def attackManager(action, attack_type=False, target=False, ID=False):
 # Command handlers:
 
 def msg_start(bot, update):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
     bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
 
 def msg_ping(bot, update):
     global admin_chatid
-    if not update.message.chat_id == admin_chatid:
+    if not str(update.message.chat_id) == str(admin_chatid):
         return
 
     bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
 
 def msg_scan(bot, update, args):
     global admin_chatid
-    if not update.message.chat_id == admin_chatid:
+    if not str(update.message.chat_id) == str(admin_chatid):
         return
 
     global latest_scan
@@ -227,7 +231,7 @@ def msg_scan(bot, update, args):
 
 def msg_kill(bot, update, args):
     global admin_chatid
-    if not update.message.chat_id == admin_chatid:
+    if not str(update.message.chat_id) == str(admin_chatid):
         return
 
     if args == []:
@@ -262,7 +266,7 @@ def msg_kill(bot, update, args):
 
 def msg_stop(bot, update, args):
     global admin_chatid
-    if not update.message.chat_id == admin_chatid:
+    if not str(update.message.chat_id) == str(admin_chatid):
         return
 
     if args == []:
@@ -283,9 +287,9 @@ def msg_stop(bot, update, args):
 
 def msg_attacks(bot, update, args):
     global admin_chatid
-    if not update.message.chat_id == admin_chatid:
+    if not str(update.message.chat_id) == str(admin_chatid):
         return
-    
+
     attacks = attackManager("list")
 
     if attacks == []:
