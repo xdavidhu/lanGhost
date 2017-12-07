@@ -1,7 +1,8 @@
 from mitmproxy import http
-import sqlite3, time
+import sqlite3, time, os
 
-DBconn = sqlite3.connect("lanGhost.db")
+script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+DBconn = sqlite3.connect(script_path + "lanGhost.db")
 DBcursor = DBconn.cursor()
 DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_mitm (id integer primary key autoincrement, source VARCHAR(50),host TEXT, url TEXT, method VARCHAR(50), data TEXT, time TEXT)")
 DBconn.commit()
@@ -10,7 +11,7 @@ DBconn.close()
 # source, host, url, method, data, time
 
 def request(flow):
-    DBconn = sqlite3.connect("lanGhost.db")
+    DBconn = sqlite3.connect(script_path + "lanGhost.db")
     DBcursor = DBconn.cursor()
     if flow.request.method == "POST":
         DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, time) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.url), str(flow.request.method), str(flow.request.text), str(int(time.time()))))
