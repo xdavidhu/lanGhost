@@ -188,8 +188,8 @@ def arpSpoof(target, ID, atype):
 
 def mitmHandler(target, ID, bot):
     global admin_chatid
+    global script_path
 
-    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
     print("[+][mitmHandler][ID:" + str(ID) + "] Starting mitmdump in screen session...")
     os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -m -d mitmdump -T -s " + script_path)
 
