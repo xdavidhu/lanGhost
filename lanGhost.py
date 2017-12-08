@@ -196,7 +196,6 @@ def mitmHandler(target, ID, bot):
     while True:
         if attackManager("isrunning", ID=ID) == True:
             try:
-                script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
                 DBconn = sqlite3.connect(script_path + "lanGhost.db")
                 DBcursor = DBconn.cursor()
                 DBcursor.execute("SELECT * FROM lanGhost_mitm")
