@@ -435,7 +435,7 @@ def main():
     attacks_handler = CommandHandler('attacks', msg_attacks, pass_args=True)
     dispatcher.add_handler(attacks_handler)
     mitm_handler = CommandHandler('mitm', msg_mitm, pass_args=True)
-    dispatcher.add_handler(attacks_handler)
+    dispatcher.add_handler(mitm_handler)
 
     print("[+] Telegram bot started...")
     updater.start_polling()
