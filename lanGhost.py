@@ -217,7 +217,7 @@ def mitmHandler(target, ID, bot):
                 DBconn.close()
                 time.sleep(1)
             except:
-                pass
+                print("[!] " + str(traceback.format_exc()))
         else:
             print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
             os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -X stuff '^C\n'")
