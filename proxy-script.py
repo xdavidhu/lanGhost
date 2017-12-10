@@ -14,11 +14,11 @@ def request(flow):
     DBconn = sqlite3.connect(script_path + "lanGhost.db")
     DBcursor = DBconn.cursor()
     if flow.request.method == "POST":
-        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, time) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.url), str(flow.request.method), str(flow.request.text), str(int(time.time()))))
+        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, time) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), str(flow.request.text), str(int(time.time()))))
         DBconn.commit()
-        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.url + " - " + flow.request.method + " - " + str(flow.request.text) + " - " + str(int(time.time())))
+        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + str(flow.request.text) + " - " + str(int(time.time())))
     else:
-        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, time) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.url), str(flow.request.method), "false", str(int(time.time()))))
+        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, time) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), "false", str(int(time.time()))))
         DBconn.commit()
-        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.url + " - " + flow.request.method + " - " + "false" + " - " + str(int(time.time())))
+        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + "false" + " - " + str(int(time.time())))
     DBconn.close()

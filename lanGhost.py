@@ -191,7 +191,7 @@ def mitmHandler(target, ID, bot):
     global script_path
 
     print("[+][mitmHandler][ID:" + str(ID) + "] Starting mitmdump in screen session...")
-    os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -m -d mitmdump -T -s " + script_path + "proxy-script.py")
+    os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -m -d mitmdump -T --host -s " + script_path + "proxy-script.py")
 
     while True:
         if attackManager("isrunning", ID=ID) == True:
