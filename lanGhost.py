@@ -220,7 +220,6 @@ def mitmHandler(target, ID, bot):
                 DBconn.close()
                 time.sleep(1)
             except:
-                os.system("rm " + script_path + "lanGhost.db")
                 print("[!!!] mitmHandler crashed...")
         else:
             print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
