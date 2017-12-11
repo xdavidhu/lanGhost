@@ -444,7 +444,22 @@ def main():
     dispatcher.add_handler(mitm_handler)
 
     print("[+] Telegram bot started...")
-    updater.start_polling()
+    while True:
+        try:
+            updater.start_polling()
+        except KeyboardInterrupt:
+            print("\n\n[+] Stopping...")
+            attacks = attackManager("list")
+            if not attacks == []:
+                print("[+] Stopping attacks...")
+            for attack in attacks:
+                attackManager("del", ID=attack[0])
+            if not attacks == []:
+                time.sleep(5)
+            print("[+] lanGhost stopped")
+            exit()
+        except:
+            print("[!!!] Telegram bot crashed, restating...")
 
 if __name__ == '__main__':
     if os.geteuid() != 0:
