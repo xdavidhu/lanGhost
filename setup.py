@@ -3,10 +3,6 @@
 # setup.py
 # author: xdavidhu
 
-from telegram.ext import Updater, MessageHandler, Filters
-from random import randint
-import telegram
-import json
 import os
 
 GREEN = '\033[1m' + '\033[32m'
@@ -29,6 +25,13 @@ if __name__ == '__main__':
     except:
         print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
+
+    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+    print("[+] Installing requirements...")
+    os.system("sudo apt update")
+    os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen -y")
+    os.system("python3 -m pip install -r " + script_path + "requirements.txt")
+
     print("[I] Step 1 / 3:\n")
     interface = input("[?] Please enter the name of the network interface " +\
                         "connected/will be connected to the target LAN: ")
@@ -47,6 +50,12 @@ if __name__ == '__main__':
             "recieve your API key. Please enter it here:\n")
     telegram_api = input("[?] Telegram API key: ")
     os.system("clear")
+
+    from telegram.ext import Updater, MessageHandler, Filters
+    from random import randint
+    import telegram
+    import json
+    
     print("\n\n[I] Step 3 / 3:\n")
     print("[+] Now for lanGhost to only allow access to you, you need to "+\
             "verify yourself.\n\nSend the verification code below TO THE BOT"+\
@@ -90,7 +99,6 @@ if __name__ == '__main__':
     print("[+] Generating config file...")
     config_object = {"interface": interface, "telegram_api": telegram_api, "admin_chatid": admin_chatid}
     config_json = json.dumps(config_object)
-    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
     with open(script_path + "config.cfg", "w") as f:
         f.write(config_json)
         f.close()
