@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -.- coding: utf-8 -.-
-# dnsserver.py
+# dnsServer.py
 # (c) 2014 Patryk Hes
 # Copyright: Patryk Hes - https://github.com/pathes/fakedns
 # Modified by: xdavidhu
