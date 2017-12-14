@@ -708,7 +708,7 @@ if __name__ == '__main__':
 
     os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
 
-    os.system("sudo screen -S lanGhost-mitm -m -d mitmdump -T --host -s " + script_path + "proxy-script.py")
+    os.system("sudo screen -S lanGhost-mitm -m -d mitmdump -T --host -s " + script_path + "proxyScript.py")
     os.system("sudo screen -S lanGhost-dns -m -d python3 " + script_path + "dnsserver.py")
     refreshNetworkInfo()
     iptables("setup")
