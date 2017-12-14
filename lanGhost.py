@@ -3,26 +3,33 @@
 # lanGhost.py
 # author: xdavidhu
 
-import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
-
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from netaddr import IPAddress
-from scapy.all import send, ARP
-from time import sleep
-import urllib.request
-import urllib.parse
-import netifaces
-import traceback
-import threading
-import telegram
-import requests
-import sqlite3
-import base64
-import time
-import nmap
-import json
-import os
+try:
+    import logging
+    logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
+    
+    from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+    from netaddr import IPAddress
+    from scapy.all import send, ARP
+    from time import sleep
+    import urllib.request
+    import urllib.parse
+    import netifaces
+    import traceback
+    import threading
+    import telegram
+    import requests
+    import sqlite3
+    import base64
+    import time
+    import nmap
+    import json
+    import os
+except KeyboardInterrupt:
+    print("\n\n[+] Stopping...")
+    raise SystemExit
+except:
+    print("[!] Requirements are not installed... Please run the 'setup.py' script first.")
+    raise SystemExit
 
 def refreshNetworkInfo():
     global iface_mac
