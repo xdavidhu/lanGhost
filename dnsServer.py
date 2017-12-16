@@ -31,14 +31,14 @@ def getIP(domain_name, client_address):
 
     DBconn = sqlite3.connect(script_path + "lanGhost.db")
     DBcursor = DBconn.cursor()
-    DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(client_address[0]), domain_name, "false", False, ip, "1"))
-    DBconn.commit()
     DBcursor.execute("SELECT domain, fakeip FROM lanGhost_dns WHERE target = ?", [str(client_address[0])])
     data = DBcursor.fetchall()
-    DBconn.close()
     if not data == []:
         if domain_name == data[0][0]:
             ip = data[0][1]
+    DBcursor.execute("INSERT INTO lanGhost_mitm(source, host, url, method, data, dns) VALUES (?, ?, ?, ?, ?, ?)", (str(client_address[0]), domain_name, "false", False, ip, "1"))
+    DBconn.commit()
+    DBconn.close()
     print("[+] Resolving " + domain_name + " to " + ip + " from " + str(client_address[0]))
     return ip
 

