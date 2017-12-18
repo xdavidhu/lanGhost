@@ -20,6 +20,7 @@ try:
     import requests
     import sqlite3
     import base64
+    import socket
     import time
     import nmap
     import json
@@ -656,6 +657,12 @@ def msg_spoofdns(bot, update, args):
         target_ip = args[0]
         domain = args[1]
         fakeip = args[2]
+
+        try:
+            socket.inet_aton(fakeip)
+        except socket.error:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ FAKE-IP is not valid... Please try again.")
+            return
 
         global latest_scan
         hosts = latest_scan[:]
