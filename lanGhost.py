@@ -788,8 +788,12 @@ def msg_restart(bot, update):
     if not str(update.message.chat_id) == str(admin_chatid):
         return
 
-    bot.send_message(chat_id=update.message.chat_id, text="✅ Restarting lanGhost...")
-    restarting()
+    try:
+        bot.send_message(chat_id=update.message.chat_id, text="✅ Restarting lanGhost...")
+        restarting()
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def msg_reversesh(bot, update, args):
     global admin_chatid
