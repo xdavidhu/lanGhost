@@ -203,6 +203,12 @@ def subscriptionHandler(bot):
         for host in disconnected:
             print("[+] Device disconnected: " + resolveMac(host[1]) + " - " + host[0])
             bot.send_message(chat_id=admin_chatid, text="➖📱 Device disconnected: " + resolveMac(host[1]) + " ➖ " + host[0])
+
+            attacksRunning = attackManager("getids", target=host[0])
+            for attackid in attacksRunning:
+                print("[+] Stopping attack " + str(attackid[0]) + ", because " + host[0] + " disconnected.")
+                bot.send_message(chat_id=admin_chatid, text="✅ Stopping attack " + str(attackid[0]) + ", because " + host[0] + " disconnected.")
+                stopAttack(attackid[0])
             disconnected.remove(host)
 
         time.sleep(20)
@@ -334,6 +340,14 @@ def attackManager(action, attack_type=False, target=False, ID=False):
         else:
             return data[0]
 
+    elif action == "getids":
+        DBcursor.execute("SELECT attackid FROM lanGhost_attacks WHERE target=?", [target])
+        data = DBcursor.fetchall()
+        if data == None:
+            return []
+        else:
+            return data
+
     elif action == "list":
         DBcursor.execute("SELECT attackid, attack_type, target FROM lanGhost_attacks")
         data = DBcursor.fetchall()
@@ -341,6 +355,50 @@ def attackManager(action, attack_type=False, target=False, ID=False):
             return []
         else:
             return data
+
+def stopAttack(ID):
+    atype = attackManager("gettype", ID=ID)
+    target = attackManager("gettarget", ID=ID)
+
+    attackManager("del", ID=ID)
+
+    global script_path
+    if atype == "kill":
+        iptables("stopkill", target=target)
+
+    elif atype == "mitm":
+        iptables("stopmitm", target=target)
+
+    elif atype == "replaceimg":
+        iptables("stopmitm", target=target)
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
+        DBconn.commit()
+        DBconn.close()
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("DELETE FROM lanGhost_img WHERE attackid=?", [str(ID)])
+        DBconn.commit()
+        DBconn.close()
+
+    elif atype == "spoofdns":
+        iptables("stopspoofdns", target=target)
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_dns (attackid TEXT, target TEXT, domain TEXT, fakeip TEXT)")
+        DBconn.commit()
+        DBconn.close()
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("DELETE FROM lanGhost_dns WHERE attackid=?", [str(ID)])
+        DBconn.commit()
+        DBconn.close()
+
 
 def stop_updater():
     global updater
@@ -358,7 +416,7 @@ def stopping():
     if not attacks == []:
         print("[+] Stopping attacks...")
     for attack in attacks:
-        attackManager("del", ID=attack[0])
+        stopAttack(attack[0])
     if not attacks == []:
         time.sleep(5)
     os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
@@ -380,7 +438,7 @@ def restarting():
     if not attacks == []:
         print("[+] Stopping attacks...")
     for attack in attacks:
-        attackManager("del", ID=attack[0])
+        stopAttack(attack[0])
     if not attacks == []:
         time.sleep(5)
     os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
@@ -493,47 +551,7 @@ def msg_stop(bot, update, args):
             bot.send_message(chat_id=update.message.chat_id, text="⚠️ No attack with ID " + str(ID) + ".")
             return
 
-        atype = attackManager("gettype", ID=ID)
-        target = attackManager("gettarget", ID=ID)
-
-        attackManager("del", ID=ID)
-
-        global script_path
-        if atype == "kill":
-            iptables("stopkill", target=target)
-
-        elif atype == "mitm":
-            iptables("stopmitm", target=target)
-
-        elif atype == "replaceimg":
-            iptables("stopmitm", target=target)
-
-            DBconn = sqlite3.connect(script_path + "lanGhost.db")
-            DBcursor = DBconn.cursor()
-            DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_img (attackid TEXT, target TEXT, img TEXT, targetip TEXT)")
-            DBconn.commit()
-            DBconn.close()
-
-            DBconn = sqlite3.connect(script_path + "lanGhost.db")
-            DBcursor = DBconn.cursor()
-            DBcursor.execute("DELETE FROM lanGhost_img WHERE attackid=?", [str(ID)])
-            DBconn.commit()
-            DBconn.close()
-
-        elif atype == "spoofdns":
-            iptables("stopspoofdns", target=target)
-
-            DBconn = sqlite3.connect(script_path + "lanGhost.db")
-            DBcursor = DBconn.cursor()
-            DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_dns (attackid TEXT, target TEXT, domain TEXT, fakeip TEXT)")
-            DBconn.commit()
-            DBconn.close()
-
-            DBconn = sqlite3.connect(script_path + "lanGhost.db")
-            DBcursor = DBconn.cursor()
-            DBcursor.execute("DELETE FROM lanGhost_dns WHERE attackid=?", [str(ID)])
-            DBconn.commit()
-            DBconn.close()
+        stopAttack(ID)
 
         bot.send_message(chat_id=update.message.chat_id, text="✅ Attack " + str(ID) + " stopped...")
     except:
