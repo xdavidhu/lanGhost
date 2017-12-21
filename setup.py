@@ -29,7 +29,7 @@ if __name__ == '__main__':
     script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
     print("[+] Installing requirements...")
     os.system("sudo apt update")
-    os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen -y")
+    os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
     os.system("python3 -m pip install -r " + script_path + "requirements.txt")
 
     print("[I] Step 1 / 3:\n")
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     from random import randint
     import telegram
     import json
-    
+
     print("\n\n[I] Step 3 / 3:\n")
     print("[+] Now for lanGhost to only allow access to you, you need to "+\
             "verify yourself.\n\nSend the verification code below TO THE BOT"+\
