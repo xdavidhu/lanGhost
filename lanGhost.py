@@ -34,32 +34,37 @@ except:
     raise SystemExit
 
 def refreshNetworkInfo():
-    global iface_mac
-    global ip_range
-    global gw_ip
-    global gw_mac
-    global ip
+    try:
+        global iface_mac
+        global ip_range
+        global gw_ip
+        global gw_mac
+        global ip
 
-    iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
-    iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
-    netmask = iface_info["netmask"]
-    ip = iface_info["addr"]
-    ip_range = ip + "/" + str(IPAddress(netmask).netmask_bits())
-    gw_ip = False
-    for i in netifaces.gateways()[2]:
-        if i[1] == interface:
-            gw_ip = i[0]
-    if not gw_ip:
-        print("[!] Cant get gateway IP...")
-    else:
-        nm = nmap.PortScanner()
-        scan = nm.scan(hosts=gw_ip, arguments='-sP')
-        hosts = []
-        if gw_ip in scan["scan"]:
-            if "mac" in scan["scan"][gw_ip]["addresses"]:
-                gw_mac = scan["scan"][gw_ip]["addresses"]["mac"]
-    if not gw_mac:
-        print("[!] Cant get gateway MAC...")
+        iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
+        iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
+        netmask = iface_info["netmask"]
+        ip = iface_info["addr"]
+        ip_range = ip + "/" + str(IPAddress(netmask).netmask_bits())
+        gw_ip = False
+        for i in netifaces.gateways()[2]:
+            if i[1] == interface:
+                gw_ip = i[0]
+        if not gw_ip:
+            print("[!] Cant get gateway IP...")
+        else:
+            nm = nmap.PortScanner()
+            scan = nm.scan(hosts=gw_ip, arguments='-sP')
+            hosts = []
+            if gw_ip in scan["scan"]:
+                if "mac" in scan["scan"][gw_ip]["addresses"]:
+                    gw_mac = scan["scan"][gw_ip]["addresses"]["mac"]
+        if not gw_mac:
+            print("[!] Cant get gateway MAC...")
+        return True
+    except:
+        print("[!] Error while getting network info. Retrying...")
+        return False
 
 def iptables(action, target=False):
     if action == "setup":
@@ -112,7 +117,8 @@ def iptables(action, target=False):
         os.system("sudo iptables -t nat -D PREROUTING -s " + target + " -p udp --destination-port 53 -j REDIRECT --to-port 53")
 
 def scan():
-    refreshNetworkInfo()
+    if not refreshNetworkInfo():
+        return "NETERROR"
     global ip_range
     nm = nmap.PortScanner()
     scan = nm.scan(hosts=ip_range, arguments='-sP')
@@ -233,6 +239,9 @@ def subscriptionHandler(bot):
     while True:
         print("[+] Scanning for new hosts...")
         new_hosts = scan()
+        if new_hosts == "NETERROR":
+            time.sleep(5)
+            continue
         connected_hosts = []
         disconnected_hosts = []
         if not hosts == False:
