@@ -128,6 +128,61 @@ def scan():
                 hosts.append([host, scan["scan"][host]["addresses"]["mac"]])
     return hosts
 
+def scanIP(ip):
+    nm = nmap.PortScanner()
+    scan = nm.scan(hosts=ip, arguments='-sS')
+    result = []
+
+    # layout: [ipv4, mac, vendor, hostname, [port, name]]
+
+    if scan["scan"] == {}:
+        return "DOWN"
+
+    try:
+        if "addresses" in scan["scan"][ip]:
+            if "ipv4" in scan["scan"][ip]["addresses"]:
+                result.append(str(scan["scan"][ip]["addresses"]["ipv4"]))
+            else:
+                result.append("??")
+            if "mac" in scan["scan"][ip]["addresses"]:
+                result.append(str(scan["scan"][ip]["addresses"]["mac"]))
+                if "vendor" in scan["scan"][ip] and scan["scan"][ip]["addresses"]["mac"] in scan["scan"][ip]["vendor"]:
+                    result.append(str(scan["scan"][ip]["vendor"][scan["scan"][ip]["addresses"]["mac"]]))
+                else:
+                    result.append("??")
+            else:
+                result.append("??")
+                result.append("??")
+        else:
+            result.append("??")
+            result.append("??")
+            result.append("??")
+
+        if "hostnames" in scan["scan"][ip] and "name" in scan["scan"][ip]["hostnames"][0]:
+            result.append(str(scan["scan"][ip]["hostnames"][0]["name"]))
+        else:
+            result.append("??")
+
+        if "tcp" in scan["scan"][ip]:
+            tempList = []
+            for port in scan["scan"][ip]["tcp"]:
+                if "name" in scan["scan"][ip]["tcp"][port]:
+                    name = scan["scan"][ip]["tcp"][port]["name"]
+                else:
+                    name = "??"
+                if "state" in scan["scan"][ip]["tcp"][port]:
+                    state = scan["scan"][ip]["tcp"][port]["state"]
+                else:
+                    state = "??"
+                tempPort = [str(port), str(state), str(name)]
+                tempList.append(tempPort)
+            result.append(tempList)
+        else:
+            result.append([])
+    except:
+        result = False
+    return result
+
 def resolveMac(mac):
     r = requests.get('https://api.macvendors.com/' + mac)
     vendor = r.text
@@ -780,7 +835,7 @@ def msg_help(bot, update):
         return
 
     try:
-        bot.send_message(chat_id=update.message.chat_id, text="👻 lanGhost help:\n\n/scan - Scan LAN network\n/kill [TARGET-IP] - Stop the target's network connection.\n" +\
+        bot.send_message(chat_id=update.message.chat_id, text="👻 lanGhost help:\n\n/scan - Scan LAN network\n/scanip [TARGET-IP] - Scan a specific IP address.\n/kill [TARGET-IP] - Stop the target's network connection.\n" +\
                                                                 "/mitm [TARGET-IP] - Capture HTTP/DNS traffic from target.\n/replaceimg [TARGET-IP] - Replace HTTP images requested by target.\n" +\
                                                                 "/spoofdns [TARGET-IP] [DOMAIN] [FAKE-IP] - Spoof DNS records for target.\n/attacks - View currently running attacks.\n" +\
                                                                 "/stop [ATTACK ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n/reversesh [TARGET-IP] [PORT] - Create a netcat reverse shell to target.\n" +\
@@ -845,6 +900,49 @@ def msg_reversesh(bot, update, args):
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
+def msg_scanip(bot, update, args):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+
+    try:
+        if args == []:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /scanip [TARGET-IP]")
+            return
+
+        target_ip = args[0]
+
+        try:
+            socket.inet_aton(target_ip)
+        except socket.error:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ TARGET-IP is not valid... Please try again.")
+            return
+
+        bot.send_message(chat_id=update.message.chat_id, text="Scanning host... 🔎")
+
+        scan = scanIP(target_ip)
+        if scan == False:
+            bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong with the scan... Please try again.")
+            return
+        if scan == "DOWN":
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Host is down...")
+            return
+        textline = "🖥 ➖ " + scan[0] + "\n\nMAC ➖ " + scan[1] + "\nVendor ➖ " + scan[2] + "\nHostname ➖ " + scan[3][:100] + "\n\n"
+        if scan[4] == []:
+            textline += "No ports are open."
+        else:
+            textline += "Ports:\n"
+            for port in scan[4]:
+                if len(textline) > 3000:
+                    bot.send_message(chat_id=update.message.chat_id, text="⚠️ Too many ports are open, some will not be displayed because message is too long...")
+                    break
+                textline += port[0] + " ➖ " + port[1] + " ➖ " + port[2] + "\n"
+        bot.send_message(chat_id=update.message.chat_id, text=textline)
+
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
+
 def main():
     global admin_chatid
     global updater
@@ -885,6 +983,8 @@ def main():
     dispatcher.add_handler(restart_handler)
     reversesh_handler = CommandHandler('reversesh', msg_reversesh, pass_args=True)
     dispatcher.add_handler(reversesh_handler)
+    scanip_handler = CommandHandler('scanip', msg_scanip, pass_args=True)
+    dispatcher.add_handler(scanip_handler)
 
     dispatcher.add_handler(MessageHandler(Filters.text, msg_unknown))
     dispatcher.add_handler(MessageHandler(Filters.command, msg_unknown))
