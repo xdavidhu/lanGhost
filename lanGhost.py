@@ -489,7 +489,7 @@ def stopping():
         stopAttack(attack[0])
     if not attacks == []:
         time.sleep(5)
-    os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
+    os.system("sudo rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
     print("[+] lanGhost stopped")
     raise SystemExit
 
@@ -511,7 +511,7 @@ def restarting():
         stopAttack(attack[0])
     if not attacks == []:
         time.sleep(5)
-    os.system("rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
+    os.system("sudo rm -r " + script_path + "lanGhost.db > /dev/null 2>&1")
     print("[+] lanGhost stopped")
     restart_t = threading.Thread(target=restart_thread)
     restart_t.start()
