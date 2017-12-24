@@ -29,8 +29,6 @@ if __name__ == '__main__':
         if sys.argv[1] == "--norequirements":
             noRequirements = True
 
-    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
-
     if not noRequirements:
         try:
             print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
@@ -44,14 +42,18 @@ if __name__ == '__main__':
             print("[+] Installing requirements...")
             os.system("sudo apt update")
             os.system("sudo sudo apt install nmap python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
-            os.system("python3 -m pip install -r " + script_path + "requirements.txt")
+            os.system("python3 -m pip install -r " + os.path.dirname(os.path.realpath(__file__)) + "/" + "requirements.txt")
             os.execl(sys.executable, sys.executable, os.path.dirname(os.path.realpath(__file__)) + "/setup.py", "--norequirements")
         except:
             print("[+] Requirements install skipped...")
 
     print("\n\n[I] Step 1 / 4:\n")
-    interface = input("[?] Please enter the name of the network interface " +\
-                        "connected/will be connected to the target LAN: ")
+    print("[+] Please enter the name of the network interface " +\
+            "connected/will be connected to the target LAN. Default " +\
+            "wired interface is 'eth0', and the default wireless " +\
+            "interface is 'wlan0' on most systems, but you can check it " +\
+            "in a different terminal with the 'ifconfig' command.\n")
+    interface = input("[?] Interface to use: ")
     os.system("clear")
     print("[+] Interface '" + interface + "' set.")
     print("\n\n[I] Step 2 / 4:\n")
@@ -116,7 +118,7 @@ if __name__ == '__main__':
     print("[+] Generating config file...")
     config_object = {"interface": interface, "telegram_api": telegram_api, "admin_chatid": admin_chatid}
     config_json = json.dumps(config_object)
-    with open(script_path + "config.cfg", "w") as f:
+    with open(os.path.dirname(os.path.realpath(__file__)) + "/config.cfg", "w") as f:
         f.write(config_json)
         f.close()
     os.system("clear")
@@ -130,7 +132,7 @@ if __name__ == '__main__':
     reboot = input("[?] Start lanGhost on boot (Y/n): ")
     if reboot.lower() == "y" or reboot.lower() == "":
         print("[+] Setting up autostart... (ignore 'no contrab for [user]' message)")
-        os.system("crontab -l | { cat; echo '@reboot (. ~/.profile; /usr/bin/screen -dmS lanGhost python3 " + script_path + "lanGhost.py)'; } | crontab -")
+        os.system("crontab -l | { cat; echo '@reboot (. ~/.profile; /usr/bin/screen -dmS lanGhost python3 " + os.path.dirname(os.path.realpath(__file__)) + "/lanGhost.py)'; } | crontab -")
     else:
         print("[+] Skipping autostart setup...")
 
