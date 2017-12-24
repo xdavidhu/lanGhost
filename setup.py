@@ -3,7 +3,7 @@
 # setup.py
 # author: xdavidhu
 
-import os
+import os, time
 
 GREEN = '\033[1m' + '\033[32m'
 WHITE = '\033[1m' + '\33[97m'
@@ -27,17 +27,22 @@ if __name__ == '__main__':
 
 
     script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
-    print("[+] Installing requirements...")
-    os.system("sudo apt update")
-    os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
-    os.system("python3 -m pip install -r " + script_path + "requirements.txt")
+    try:
+        print("[+] Installing requirements in 5 seconds... Press CTRL + C to skip.")
+        time.sleep(5)
+        print("[+] Installing requirements...")
+        os.system("sudo apt update")
+        os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
+        os.system("python3 -m pip install -r " + script_path + "requirements.txt")
+    except:
+        print("[+] Requirements install skipped...")
 
-    print("[I] Step 1 / 3:\n")
+    print("\n\n[I] Step 1 / 4:\n")
     interface = input("[?] Please enter the name of the network interface " +\
                         "connected/will be connected to the target LAN: ")
-    print("[+] Interface '" + interface + "' set.")
     os.system("clear")
-    print("\n\n[I] Step 2 / 3:\n")
+    print("[+] Interface '" + interface + "' set.")
+    print("\n\n[I] Step 2 / 4:\n")
     print("[+] Please create a Telegram API key by messaging @BotFather on " +\
             "Telegram with the command '/newbot'.\n\nAfter this, @BotFather "+\
             "will ask you to choose a name for your bot. This can be "+\
@@ -50,13 +55,13 @@ if __name__ == '__main__':
             "recieve your API key. Please enter it here:\n")
     telegram_api = input("[?] Telegram API key: ")
     os.system("clear")
-
+    print("\n\n[I] Loading...\n")
     from telegram.ext import Updater, MessageHandler, Filters
     from random import randint
     import telegram
     import json
 
-    print("\n\n[I] Step 3 / 3:\n")
+    print("\n\n[I] Step 3 / 4:\n")
     print("[+] Now for lanGhost to only allow access to you, you need to "+\
             "verify yourself.\n\nSend the verification code below TO THE BOT"+\
             " you just created. Just search for your bot's @username "+\
@@ -102,4 +107,20 @@ if __name__ == '__main__':
     with open(script_path + "config.cfg", "w") as f:
         f.write(config_json)
         f.close()
+    os.system("clear")
+    print("[+] Config file generated successfully.")
+    print("\n\n[I] Step 4 / 4:\n")
+    print("[+] Do you want lanGhost to start on boot? This option is " +\
+            "necessary if you are using this device as a dropbox, because " +\
+            "when you are going to drop this device into a network, you " +\
+            "will not have the chanse to start lanGhost remotely! " +\
+            "(autostart works by adding a new cron '@reboot' entry)")
+    reboot = input("[?] Start lanGhost on boot (Y/n): ")
+    if reboot.lower() == "y" or reboot.lower() == "":
+        print("[+] Setting up autostart...")
+        os.system("crontab -l")
+        os.system("crontab -l | { cat; echo '@reboot (. ~/.profile; /usr/bin/screen -dmS lanGhost python3 " + script_path + "lanGhost.py)'; } | crontab -")
+    else:
+        print("[+] Skipping autostart setup...")
+
     print("[+] Setup done.")
