@@ -1010,7 +1010,7 @@ def main():
 if __name__ == '__main__':
     if os.geteuid() != 0:
         print("[!] Please run lanGhost as root!")
-        exit()
+        raise SystemExit
 
     script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -1020,13 +1020,13 @@ if __name__ == '__main__':
             f.close()
     except Exception:
         print("[!] Config file not found... Please run the 'setup.py' script first.")
-        exit()
+        raise SystemExit
 
     try:
         config = json.loads(config)
     except:
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
-        exit()
+        raise SystemExit
 
     interface = config.get("interface", False)
     telegram_api = config.get("telegram_api", False)
@@ -1034,7 +1034,7 @@ if __name__ == '__main__':
 
     if interface == False or telegram_api == False or admin_chatid == False:
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
-        exit()
+        raise SystemExit
 
     GREEN = '\033[1m' + '\033[32m'
     WHITE = '\033[1m' + '\33[97m'

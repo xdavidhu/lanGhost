@@ -3,7 +3,11 @@
 # setup.py
 # author: xdavidhu
 
-import os, time
+import os, time, sys
+
+if os.geteuid() != 0:
+    print("[!] Please run the lanGhost setup as root!")
+    exit()
 
 GREEN = '\033[1m' + '\033[32m'
 WHITE = '\033[1m' + '\33[97m'
@@ -20,22 +24,29 @@ header = """
 
 if __name__ == '__main__':
 
-    try:
-        print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
-    except:
-        print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
+    noRequirements = False
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--norequirements":
+            noRequirements = True
+
+    if not noRequirements:
+        try:
+            print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
+        except:
+            print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
 
-    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
-    try:
-        print("[+] Installing requirements in 5 seconds... Press CTRL + C to skip.")
-        time.sleep(5)
-        print("[+] Installing requirements...")
-        os.system("sudo apt update")
-        os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
-        os.system("python3 -m pip install -r " + script_path + "requirements.txt")
-    except:
-        print("[+] Requirements install skipped...")
+        script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+        try:
+            print("[+] Installing requirements in 5 seconds... Press CTRL + C to skip.")
+            time.sleep(5)
+            print("[+] Installing requirements...")
+            os.system("sudo apt update")
+            os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
+            os.system("python3 -m pip install -r " + script_path + "requirements.txt")
+            os.execl(sys.executable, sys.executable, ["setup.py", "--norequirements"])
+        except:
+            print("[+] Requirements install skipped...")
 
     print("\n\n[I] Step 1 / 4:\n")
     interface = input("[?] Please enter the name of the network interface " +\
@@ -114,11 +125,10 @@ if __name__ == '__main__':
             "necessary if you are using this device as a dropbox, because " +\
             "when you are going to drop this device into a network, you " +\
             "will not have the chanse to start lanGhost remotely! " +\
-            "(autostart works by adding a new cron '@reboot' entry)")
+            "(autostart works by adding a new cron '@reboot' entry)\n")
     reboot = input("[?] Start lanGhost on boot (Y/n): ")
     if reboot.lower() == "y" or reboot.lower() == "":
-        print("[+] Setting up autostart...")
-        os.system("crontab -l")
+        print("[+] Setting up autostart... (ignore 'no contrab for [user]' message)")
         os.system("crontab -l | { cat; echo '@reboot (. ~/.profile; /usr/bin/screen -dmS lanGhost python3 " + script_path + "lanGhost.py)'; } | crontab -")
     else:
         print("[+] Skipping autostart setup...")
