@@ -19,7 +19,7 @@ def getIP(domain_name, client_address):
         dataip = socket.gethostbyname_ex(domain_name)
         ip = str(dataip[2][0]).strip("[] '")
     except socket.gaierror:
-        ip = "1.1.1.1"
+        ip = "0.0.0.0"
 
     script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
     DBconn = sqlite3.connect(script_path + "lanGhost.db")
