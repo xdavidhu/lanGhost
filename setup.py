@@ -29,6 +29,8 @@ if __name__ == '__main__':
         if sys.argv[1] == "--norequirements":
             noRequirements = True
 
+    script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+
     if not noRequirements:
         try:
             print(header + """          v1.0 """ + WHITE + """by David Schütz (@xdavidhu)    """ + "\n" + END)
@@ -36,7 +38,6 @@ if __name__ == '__main__':
             print(header + """                         v1.0 """ + WHITE + """by @xdavidhu    """ + "\n" + END)
 
 
-        script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
         try:
             print("[+] Installing requirements in 5 seconds... Press CTRL + C to skip.")
             time.sleep(5)
