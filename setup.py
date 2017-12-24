@@ -43,7 +43,7 @@ if __name__ == '__main__':
             time.sleep(5)
             print("[+] Installing requirements...")
             os.system("sudo apt update")
-            os.system("sudo sudo apt install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
+            os.system("sudo sudo apt install nmap python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen netcat -y")
             os.system("python3 -m pip install -r " + script_path + "requirements.txt")
             os.execl(sys.executable, sys.executable, os.path.dirname(os.path.realpath(__file__)) + "/setup.py", "--norequirements")
         except:
