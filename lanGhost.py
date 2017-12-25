@@ -165,7 +165,10 @@ def scanIP(ip):
             result.append("??")
 
         if "hostnames" in scan["scan"][ip] and "name" in scan["scan"][ip]["hostnames"][0]:
-            result.append(str(scan["scan"][ip]["hostnames"][0]["name"]))
+            tempHostname = str(scan["scan"][ip]["hostnames"][0]["name"])
+            if tempHostname == "":
+                tempHostname = "??"
+            result.append(tempHostname)
         else:
             result.append("??")
 
