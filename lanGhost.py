@@ -91,6 +91,9 @@ def iptables(action, target=False):
     if action == "stopkill":
         print("[+] Stopping iptables kill for " + target)
         os.system("sudo iptables -D FORWARD -s " + target + " -j DROP")
+        os.system("sudo iptables -D INPUT -s " + target + " -p tcp --dport 8080 -j DROP")
+        os.system("sudo iptables -D INPUT -s " + target + " -p tcp --dport 53 -j DROP")
+        os.system("sudo iptables -D INPUT -s " + target + " -p udp --dport 53 -j DROP")
 
     if action == "mitm":
         print("[+] Routing " + target + " into mitmdump with iptables...")
