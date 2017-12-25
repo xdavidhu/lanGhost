@@ -1079,4 +1079,5 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             stopping()
         except:
-            print("[+] Main bot crashed... Restarting")
+            print("[+] Error while starting Telegram bot. Restarting...")
+            time.sleep(0.5)
