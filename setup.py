@@ -53,8 +53,17 @@ if __name__ == '__main__':
             "connected/will be connected to the target LAN. Default " +\
             "wired interface is 'eth0', and the default wireless " +\
             "interface is 'wlan0' on most systems, but you can check it " +\
-            "in a different terminal with the 'ifconfig' command.\n")
-    interface = input("[?] Interface to use: ")
+            "in a different terminal with the 'ifconfig' command.")
+    while True:
+        interface = input("\n[?] Interface to use: ")
+        print("\n\n[!?!] Are you sure that '" + str(interface) +\
+        "' is the correct interface? If the interface is not correct your " +\
+        "device's network interfaces will may be disabled temporary!! " +\
+        "(the script is going to enable hotswap on the interface "+\
+        "with allow-hotplug in /etc/network/interfaces)\n")
+        interface_confirm = input("[?] Use '" + str(interface) + "'? (y/N): ")
+        if interface_confirm.lower() == "y":
+            break
     os.system("clear")
     print("[+] Interface '" + interface + "' set.")
     print("\n\n[I] Step 2 / 4:\n")
@@ -137,4 +146,6 @@ if __name__ == '__main__':
     else:
         print("[+] Skipping autostart setup...")
 
+    print("[+] Setting up interface...")
+    os.system("echo 'allow-hotplug " + interface + "' >> /etc/network/interfaces")
     print("[+] Setup done.")
