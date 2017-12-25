@@ -41,7 +41,7 @@ if __name__ == '__main__':
             time.sleep(5)
             print("[+] Installing requirements...")
             os.system("sudo apt update")
-            os.system("sudo apt purge netcat netcat-openbsd netcat-traditional")
+            os.system("sudo apt purge netcat netcat-openbsd netcat-traditional -y")
             os.system("sudo sudo apt install netcat-traditional nmap tcpdump python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg62-turbo-dev zlib1g-dev screen -y")
             os.system("python3 -m pip install -r " + os.path.dirname(os.path.realpath(__file__)) + "/" + "requirements.txt")
             os.execl(sys.executable, sys.executable, os.path.dirname(os.path.realpath(__file__)) + "/setup.py", "--norequirements")
