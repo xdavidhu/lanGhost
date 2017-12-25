@@ -147,5 +147,17 @@ if __name__ == '__main__':
         print("[+] Skipping autostart setup...")
 
     print("[+] Setting up interface...")
-    os.system("echo 'allow-hotplug " + interface + "' >> /etc/network/interfaces")
+    configline = "allow-hotplug " + interface
+    with open("/etc/network/interfaces") as f:
+        content = f.readlines()
+    duplicate = False
+    for line in content:
+        line = line.replace("\n", "")
+        if line == configline:
+            duplicate = True
+    if not duplicate:
+        print("[+] Editing '/etc/network/interfaces' file...")
+        os.system("echo '" + configline + "' >> /etc/network/interfaces")
+    else:
+        print("[+] Hotplug already enabled, skipping edit...")
     print("[+] Setup done.")
