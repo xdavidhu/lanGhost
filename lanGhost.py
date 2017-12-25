@@ -1073,4 +1073,10 @@ if __name__ == '__main__':
 
     running_attacks = []
     latest_scan = []
-    main()
+    while True:
+        try:
+            main()
+        except KeyboardInterrupt:
+            stopping()
+        except:
+            print("[+] Main bot crashed... Restarting")
