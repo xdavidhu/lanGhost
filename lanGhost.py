@@ -34,11 +34,7 @@ except:
 
 def refreshNetworkInfo():
     try:
-        global iface_mac
-        global ip_range
-        global gw_ip
-        global gw_mac
-        global ip
+        global iface_mac, p_range, w_ip, w_mac, p
 
         iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
         iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
@@ -283,9 +279,7 @@ def subscriptionHandler(bot):
         time.sleep(20)
 
 def arpSpoof(target):
-    global iface_mac
-    global gw_ip
-    global gw_mac
+    global iface_mac, gw_ip, gw_mac
     print("[+] ARP Spoofing " + str(target[0]) + "...")
     from scapy.all import send, ARP
     while True:
@@ -304,8 +298,7 @@ def arpSpoof(target):
             break
 
 def mitmHandler(target, ID, bot):
-    global admin_chatid
-    global script_path
+    global admin_chatid, script_path
 
     while True:
         if attackManager("isrunning", ID=ID) == True:
@@ -965,8 +958,7 @@ def msg_scanip(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def main():
-    global admin_chatid
-    global updater
+    global admin_chatid, updater
 
     updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
