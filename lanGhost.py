@@ -7,24 +7,10 @@ try:
     import logging
     logging.getLogger("scapy.runtime").setLevel(logging.ERROR)  # Shut up scapy!
 
+    import urllib.request, urllib.parse, netifaces, traceback, threading, telegram, requests, sqlite3, base64, socket, time, nmap, json, sys, os
     from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
     from netaddr import IPAddress
     from time import sleep
-    import urllib.request
-    import urllib.parse
-    import netifaces
-    import traceback
-    import threading
-    import telegram
-    import requests
-    import sqlite3
-    import base64
-    import socket
-    import time
-    import nmap
-    import json
-    import sys
-    import os
 except KeyboardInterrupt:
     print("\n\n[+] Stopping...")
     raise SystemExit
