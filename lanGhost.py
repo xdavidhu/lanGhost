@@ -35,7 +35,7 @@ except:
 
 def refreshNetworkInfo():
     try:
-        global iface_mac, p_range, w_ip, w_mac, p
+        global iface_mac, ip_range, gw_ip, gw_mac, ip
 
         iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
         iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
