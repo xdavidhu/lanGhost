@@ -3,5 +3,4 @@ netifaces
 python-telegram-bot
 python-nmap
 requests
-scapy-python3
 mitmproxy
