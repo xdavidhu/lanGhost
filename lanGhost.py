@@ -246,7 +246,8 @@ def subscriptionHandler(bot):
 
     while True:
         print("[+] Scanning for new hosts...")
-        new_hosts = scan()
+        new_hosts_with_name = scan()
+        new_hosts = [i[:2] for i in new_hosts_with_name]
         if new_hosts == "NETERROR" or new_hosts == "CRASH":
             time.sleep(5)
             continue
@@ -263,7 +264,7 @@ def subscriptionHandler(bot):
                     handleDisconnect(host)
 
         global latest_scan
-        latest_scan = new_hosts[:]
+        latest_scan = new_hosts_with_name[:]
         for t_host in temp_disconnected:
             latest_scan.append(t_host[0])
 
