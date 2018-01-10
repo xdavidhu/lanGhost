@@ -4,3 +4,4 @@ python-telegram-bot
 python-nmap
 requests
 mitmproxy
+beautifulsoup4
