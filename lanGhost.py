@@ -1119,6 +1119,22 @@ if __name__ == '__main__':
         print("[!] Config file damaged... Please run the 'setup.py' script to regenerate the file.")
         raise SystemExit
 
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 8080))
+        s.close()
+    except socket.error as e:
+        print("[!] Port 8080 is already in use... Please stop any running proccess which may use port 8080 and try again.")
+        raise SystemExit
+
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 53))
+        s.close()
+    except socket.error as e:
+        print("[!] Port 53 is already in use... Please stop any running proccess which may use port 53 and try again.")
+        raise SystemExit
+
     GREEN = '\033[1m' + '\033[32m'
     WHITE = '\033[1m' + '\33[97m'
     END = '\033[0m'
