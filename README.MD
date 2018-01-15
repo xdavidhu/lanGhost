@@ -1,5 +1,5 @@
 <img src="https://github.com/xdavidhu/lanGhost/raw/master/img/lanGhost.png" align=center/><br>
-<p style="text-align: center;">
+<p align=center>
 <img src="https://travis-ci.org/xdavidhu/lanGhost.svg?branch=master" align=center/>
 <img src="https://img.shields.io/badge/python-3.3%2C%203.4%2C%203.5%2C%203.6-brightgreen.svg" align=center/>
 <img src="https://img.shields.io/badge/license-MIT-blue.svg" align=center/>
