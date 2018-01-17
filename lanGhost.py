@@ -53,7 +53,7 @@ def refreshNetworkInfo():
             print("[!] Cant get gateway IP...")
         else:
             nm = nmap.PortScanner()
-            scan = nm.scan(hosts=gw_ip, arguments='-sP')
+            scan = nm.scan(hosts=gw_ip, arguments='-sn')
             hosts = []
             if gw_ip in scan["scan"]:
                 if "mac" in scan["scan"][gw_ip]["addresses"]:
