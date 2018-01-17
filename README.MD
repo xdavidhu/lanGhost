@@ -89,7 +89,7 @@ by adding a new cron '@reboot' entry)
 ```
 
 <h3 align=center>If you are ready with the setup just reboot the Pi and lanGhost will start right up!</3>
-
+<br><br>
 <p align=center>
 <img src="https://github.com/xdavidhu/lanGhost/raw/master/img/screenshot-telegram-4.png"/>
 </p>
