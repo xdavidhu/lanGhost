@@ -630,7 +630,7 @@ def msg_stop(bot, update, args):
         try:
             ID = int(args[0])
         except:
-            bot.send_message(chat_id=update.message.chat_id, text="⚠️ Attack ID must be a number.")
+            bot.send_message(chat_id=update.message.chat_id, text="⚠️ ATTACK-ID must be a number.")
             return
 
         if not attackManager("isrunning", ID=ID):
@@ -931,7 +931,7 @@ def msg_help(bot, update):
         bot.send_message(chat_id=update.message.chat_id, text="👻 lanGhost help:\n\n/scan - Scan LAN network\n/scanip [TARGET-IP] - Scan a specific IP address.\n/kill [TARGET-IP] - Stop the target's network connection.\n" +\
                                                                 "/mitm [TARGET-IP] - Capture HTTP/DNS traffic from target.\n/replaceimg [TARGET-IP] - Replace HTTP images requested by target.\n" +\
                                                                 "/injectjs [TARGET-IP] [JS-FILE-URL] - Inject JavaScript into HTTP pages requested by target.\n/spoofdns [TARGET-IP] [DOMAIN] [FAKE-IP] - Spoof DNS records for target.\n" +\
-                                                                "/attacks - View currently running attacks.\n/stop [ATTACK ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n" +\
+                                                                "/attacks - View currently running attacks.\n/stop [ATTACK-ID] - Stop a currently running attack.\n/restart - Restart lanGhost.\n" +\
                                                                 "/reversesh [TARGET-IP] [PORT] - Create a netcat reverse shell to target.\n/help - Display this menu.\n/ping - Pong.")
     except:
         print("[!!!] " + str(traceback.format_exc()))
