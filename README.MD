@@ -155,6 +155,10 @@ All attacks use **ARP Spoofing**!
 * `/scan` - Scans the local network and returns the hosts online. Uses `nmap -sn` scan to discover hosts.
 * `/scanip` - Scans an IP address for open ports and other info. Uses `nmap -sS` scan.
 
+<h3>notifications:</h3>
+
+You will get a message every time when a new device connects/leaves the network.
+
 <h1 align=center>disclaimer:</h1>
 
 <h3 align=center>I'm not responsible for anything you do with this program, so please only use it for good and educational purposes.</h3>
