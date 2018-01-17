@@ -142,18 +142,18 @@ Telegram command:
 
 <h3>attacks:</h3>
 
-* `/kill` - Stops the internet connectivity for the target.
-* `/mitm` - Captures HTTP and DNS traffic from the target and sends it in text messages.
-* `/replaceimg` -  Replaces HTTP images for the target to what picture you send to the bot.
-* `/injectjs` - Injects JavaScript into every HTTP HTML response for the target. You need to host the the JS file on your server and give the URL as a parameter.
-* `/spoofdns` - Spoofs DNS responses for the target.
+  * `/kill` - Stops the internet connectivity for the target.
+  * `/mitm` - Captures HTTP and DNS traffic from the target and sends it in text messages.
+  * `/replaceimg` -  Replaces HTTP images for the target to what picture you send to the bot.
+  * `/injectjs` - Injects JavaScript into every HTTP HTML response for the target. You need to host the the JS file on your server and give the URL as a parameter.
+  * `/spoofdns` - Spoofs DNS responses for the target.
 
 All attacks use **ARP Spoofing**!
 
 <h3>scans:</h3>
 
-* `/scan` - Scans the local network and returns the hosts online. Uses `nmap -sn` scan to discover hosts.
-* `/scanip` - Scans an IP address for open ports and other info. Uses `nmap -sS` scan.
+  * `/scan` - Scans the local network and returns the hosts online. Uses `nmap -sn` scan to discover hosts.
+  * `/scanip` - Scans an IP address for open ports and other info. Uses `nmap -sS` scan.
 
 <h3>notifications:</h3>
 
