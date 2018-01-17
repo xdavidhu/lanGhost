@@ -17,7 +17,7 @@
 <img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png" align=center/>
 <h1 align=center>installation:</h1>
 
-You will need a Raspberry Pi with **fresh Raspbian/Kali** on the SD card, because we don't want anything else running in the background.
+You will need a Raspberry Pi with **fresh Raspbian/Kali** on the SD card, because you don't want anything else running in the background.
 
 Boot up the Pi, get an SSH sell or connect a monitor and a keyboard and enter these commands:
 
