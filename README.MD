@@ -20,7 +20,7 @@
 
 <p align=center>
 <a href="https://github.com/xdavidhu/lanGhost/blob/master/DEMOS.MD"><img src="img/demos-button.png" align=center width=40%/></a>
-<br><br>
+<br><br><br>
 </p>
 
 <h1 align=center>installation:</h1>
