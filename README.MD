@@ -14,6 +14,9 @@
     <img src="https://img.shields.io/github/stars/xdavidhu/lanGhost.svg" align=center/>
 </a>
 </p>
+
+<h3 align=center><i>A LAN dropbox chatbot controllable via Telegram</i></h3>
+
 <h1 align=center>features:</h1>
 <p align=center>
 <a href="https://github.com/xdavidhu/lanGhost/blob/master/README.MD"><img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png"/></a>
