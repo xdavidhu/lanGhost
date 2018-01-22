@@ -96,6 +96,12 @@ by adding a new cron '@reboot' entry)
 
 <h1 align=center>usage:</h1>
 
+<h3 align=center>warnings:</h3>
+
+<p align=center>Using lanGhost on a networks bigger than /24 is <b>not recommended</b> because the scans will take too long.</p>
+
+<p align=center>lanGhost is <b>not quiet</b>. Anyone monitoring the traffic can see the ARP packets!</p>
+
 <h3>available commands:</h3>
 
 ```
