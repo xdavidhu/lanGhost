@@ -1,8 +1,6 @@
 <p align=center>
-<a href="https://github.com/xdavidhu/lanGhost/blob/master/README.MD"><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/lanGhost.png"/></a>
-</p>
-<br>
-<p align=center>
+    <a href="https://github.com/xdavidhu/lanGhost/blob/master/README.MD"><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/lanGhost.png"/></a>
+
     <a href="https://travis-ci.org/xdavidhu/lanGhost">
         <img src="https://travis-ci.org/xdavidhu/lanGhost.svg?branch=master" align=center/>
     </a>
