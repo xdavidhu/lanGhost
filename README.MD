@@ -16,7 +16,7 @@
 <h1 align=center>features:</h1>
 <img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png" align=center/>
 
-<br><br><br>
+<br><br>
 
 <p align=center>
 <a href="https://github.com/xdavidhu/lanGhost/blob/master/DEMOS.MD"><img src="img/demos-button.png" align=center width=40%/></a>
