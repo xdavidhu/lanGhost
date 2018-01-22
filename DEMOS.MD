@@ -1,5 +1,5 @@
 <p align=center>
-<img src="img/demos.png" width=70%/><br>
+<a href="https://github.com/xdavidhu/lanGhost/blob/master/DEMOS.MD"><img src="img/demos.png" width=70%/></a>
 </p>
 <br><br>
 
