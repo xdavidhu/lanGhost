@@ -1,4 +1,7 @@
-<img src="https://github.com/xdavidhu/lanGhost/raw/master/img/lanGhost.png" align=center/><br>
+<p align=center>
+<a href="https://github.com/xdavidhu/lanGhost/blob/master/README.MD"><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/lanGhost.png"/></a>
+</p>
+<br>
 <p align=center>
     <a href="https://travis-ci.org/xdavidhu/lanGhost">
         <img src="https://travis-ci.org/xdavidhu/lanGhost.svg?branch=master" align=center/>
@@ -14,7 +17,9 @@
     </a>
 </p>
 <h1 align=center>features:</h1>
-<img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png" align=center/>
+<p align=center>
+<a href="https://github.com/xdavidhu/lanGhost/blob/master/README.MD"><img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png"/></a>
+</p>
 
 <br><br>
 
