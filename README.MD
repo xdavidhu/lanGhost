@@ -15,6 +15,13 @@
 </p>
 <h1 align=center>features:</h1>
 <img src="https://raw.githubusercontent.com/xdavidhu/lanGhost/master/img/features.png" align=center/>
+
+<br><br><br>
+
+<p align=center>
+<a href="https://github.com/xdavidhu/lanGhost/blob/master/DEMOS.MD"><img src="img/demos-button.png" align=center width=40%/></a>
+</p>
+
 <h1 align=center>installation:</h1>
 
 You will need a Raspberry Pi with **fresh Raspbian/Kali** on the SD card, because you don't want anything else running in the background.
