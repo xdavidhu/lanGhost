@@ -5,28 +5,35 @@
 
 <h3 align=center>/injectjs</h3>
 
-[![lanGhost](https://github.com/xdavidhu/lanGhost/raw/master/img/injectjs-index-play.png)](https://youtu.be/zB1UB2-9ZXA)
-
+<p align=center>
+<a href="https://youtu.be/zB1UB2-9ZXA")><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/injectjs-index-play.png" width=70%>
+</p>
 <br><br>
 
 <h3 align=center>/kill</h3>
 
-[![lanGhost](https://github.com/xdavidhu/lanGhost/raw/master/img/kill-index-play.png)](https://youtu.be/7JQicELLIY8)
-
+<p align=center>
+<a href="https://youtu.be/7JQicELLIY8")><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/kill-index-play.png" width=70%>
+</p>
 <br><br>
 
 <h3 align=center>/replaceimg</h3>
 
-[![lanGhost](https://github.com/xdavidhu/lanGhost/raw/master/img/replaceimg-index-play.png)](https://youtu.be/vkxBlhaARO0)
-
+<p align=center>
+<a href="https://youtu.be/vkxBlhaARO0")><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/replaceimg-index-play.png" width=70%>
+</p>
 <br><br>
 
 <h3 align=center>/mitm</h3>
 
-[![lanGhost](https://github.com/xdavidhu/lanGhost/raw/master/img/mitm-index-play.png)](https://youtu.be/TnAF7KPLW0M)
-
+<p align=center>
+<a href="https://youtu.be/TnAF7KPLW0M")><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/mitm-index-play.png" width=70%>
+</p>
 <br><br>
 
 <h3 align=center>/spoofdns</h3>
 
-[![lanGhost](https://github.com/xdavidhu/lanGhost/raw/master/img/spoofdns-index-play.png)](https://youtu.be/_DVxjfylrjg)
+<p align=center>
+<a href="https://youtu.be/_DVxjfylrjg")><img src="https://github.com/xdavidhu/lanGhost/raw/master/img/spoofdns-index-play.png" width=70%>
+</p>
+<br><br>
