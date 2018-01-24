@@ -118,11 +118,11 @@ by adding a new cron '@reboot' entry)
 
 <h3>drop it into a network:</h3>
 
-If you have selected `yes` at `step 4/4 (autostart)` the Pi is fully set up for dropping.
+If you have selected `yes` at `step 4/4 (autostart)` the Pi is fully set up for dropping. lanGhost should start up on boot, and send you a message on Telegram with the text: `lanGhost started! 👻`.
 
 Make sure to try it out in your lab first and test if lanGhost is responding to your messages!
 
-If you are all set, just connect it to the target network by plugging in the Ethernet cable into the Pi and also connect the power via micro USB and you are ready to go!
+If you are all set, just connect it to the target network by plugging in the Ethernet cable into the Pi and connecting the power via micro USB and you are ready to go!
 
 (lanGhost can also work over WiFi, but you will need to set up `wpa_supplicant` to connect to the network automatically first)
 
