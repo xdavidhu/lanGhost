@@ -116,6 +116,16 @@ by adding a new cron '@reboot' entry)
 
 <p align=center>lanGhost is <b>not quiet</b>. Anyone monitoring the traffic can see the ARP packets!</p>
 
+<h3>drop it into a network:</h3>
+
+If you have selected `yes` at `step 4/4 (autostart)` the Pi is fully set up for dropping.
+
+Make sure to try it out in your lab first and test if lanGhost is responding to your messages!
+
+If you are all set, just connect it to the target network by plugging in the Ethernet cable into the Pi and also connect the power via micro USB and you are ready to go!
+
+(lanGhost can also work over WiFi, but you will need to set up `wpa_supplicant` to connect to the network automatically first)
+
 <h3>available commands:</h3>
 
 ```
