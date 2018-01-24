@@ -154,6 +154,10 @@ To stop an attack type `/stop [ATTACK-ID]`.
 
 <h3>reverse shell:</h3>
 
+<h3 align=center>warning:</h3>
+
+<p align=center><code>/reversesh</code> only makes a netcat TCP connection which is not encrypted and all the traffic can be monitored! Only use it for emergency fixes or for setting up an encrypted reverse connection if necessary.</p>
+
 The `/reversesh` command is for getting a reverse shell on the Pi, when its not accessable from the outside.
 
 To use the `/reversesh` command you will need to have a server listening for the shell.
