@@ -248,7 +248,7 @@ def subscriptionHandler(bot):
         print("[+] Scanning for new hosts...")
         new_hosts_with_name = scan()
         new_hosts = [i[:2] for i in new_hosts_with_name]
-        if new_hosts == "NETERROR" or new_hosts == "CRASH":
+        if new_hosts_with_name == "NETERROR" or new_hosts_with_name == "CRASH":
             time.sleep(5)
             continue
         connected_hosts = []
