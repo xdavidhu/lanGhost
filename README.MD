@@ -68,7 +68,7 @@ example: xdavidbot. Make note of this username, since later
 you will have to search for this to find your bot, which lanGhost
 will be running on.
 
-After you send you username of choise to @BotFather, you will recieve
+After you send your username of choise to @BotFather, you will recieve
 your API key.
 ```
 
