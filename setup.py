@@ -75,7 +75,7 @@ if __name__ == '__main__':
             "here which ends with 'bot'. For example: xdavidbot. Make note "+\
             "of this username, since later you will have to search for this "+\
             "to find your bot, which lanGhost will be running on.\n\nAfter "+\
-            "you send you username of choise to @BotFather, you will "+\
+            "you send your username of choise to @BotFather, you will "+\
             "recieve your API key. Please enter it here:\n")
     telegram_api = input("[?] Telegram API key: ")
     os.system("clear")
