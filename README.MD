@@ -15,6 +15,8 @@
 </a>
 </p>
 
+<h3 align=center>⚠️ Warning! This project is no longer maintained and may not work as excepted.</h3>
+
 <h3 align=center><i>A LAN dropbox chatbot controllable via Telegram</i></h3>
 
 <h1 align=center>features:</h1>
